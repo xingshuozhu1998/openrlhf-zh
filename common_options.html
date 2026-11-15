@@ -1,0 +1,1245 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="zh-CN" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>常用 CLI（命令行接口）选项 &mdash; OpenRLHF 0.10.2 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js?v=69c39844"></script>
+        <script src="_static/doctools.js?v=888ff710"></script>
+        <script src="_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Hybrid Engine" href="hybrid_engine.html" />
+    <link rel="prev" title="Supervised &amp; Preference Training (SFT / RM / DPO)" href="non_rl.html" /> 
+<script async type="text/javascript" src="/openrlhf-zh/_/static/javascript/readthedocs-addons.js"></script><meta name="readthedocs-project-slug" content="openrlhf" /><meta name="readthedocs-version-slug" content="latest" /><meta name="readthedocs-resolver-filename" content="/common_options.html" /><meta name="readthedocs-http-status" content="200" /><link rel="stylesheet" href="chinese-font.css"><script defer src="offline.js"></script></head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            OpenRLHF
+          </a>
+              <div class="version">
+                0.10.2
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="搜索文档" aria-label="搜索文档" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="导航菜单">
+              <p class="caption" role="heading"><span class="caption-text">入门</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="quick_start.html">快速开始</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">核心概念</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="architecture.html">架构基础：Ray（分布式计算框架）+ vLLM（大模型推理引擎）分布式架构</a></li>
+<li class="toctree-l1"><a class="reference internal" href="agent_paradigm.html">设计范式：基于 Agent（智能体）的执行</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">训练指南</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="agent_training.html">RL（强化学习）训练指南</a></li>
+<li class="toctree-l1"><a class="reference internal" href="non_rl.html">监督与偏好训练（SFT（监督微调）/RM（奖励模型）/DPO（直接偏好优化））</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">常用 CLI（命令行接口）选项</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#section-map">Section map</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#deepspeed">DeepSpeed</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#vllm">vLLM</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#rollout-generation">Rollout / generation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#data">Data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#training">Training</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#evaluation">Evaluation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#checkpointing">Checkpoint（检查点）保存与恢复</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#logging">Logging</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#model-entity-flags">Model / entity flags</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#optimizer-adam-or-muon">Optimizer: Adam or Muon</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#pure-adam">Pure Adam</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#muon-optim-muon">Muon (<code class="docutils literal notranslate"><span class="pre">--optim</span> <span class="pre">muon</span></code>)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#learning-rate-scheduler-gradient-clip">Learning-rate scheduler &amp; gradient clip</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#lora-qlora">LoRA / QLoRA</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#long-context-checkpointing-dedicated-pages">Long context &amp; checkpointing (dedicated pages)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#flag-migration-0-9-x-early-0-10-0-10-2">Flag migration (0.9.x / early 0.10 → 0.10.2)</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#models">Models</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ray-placement-colocation">Ray placement / colocation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#vllm-deepspeed">vLLM / DeepSpeed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#rollout-data-train-eval-ckpt-logger">Rollout / data / train / eval / ckpt / logger</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#rl-algorithm-loss">RL algorithm / loss</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#optimizer-scheduler">Optimizer / scheduler</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#sft-rm-dpo-model-level-loss-knobs">SFT / RM / DPO model-level loss knobs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#removed-flags">Removed flags</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">扩展与运维</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="hybrid_engine.html">Hybrid Engine（混合引擎）</a></li>
+<li class="toctree-l1"><a class="reference internal" href="async_training.html">异步训练与 Partial Rollout（可中断并恢复的部分采样生成）</a></li>
+<li class="toctree-l1"><a class="reference internal" href="performance.html">性能调优</a></li>
+<li class="toctree-l1"><a class="reference internal" href="checkpoint.html">Checkpoint（检查点）保存与恢复</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sequence_parallelism.html">Sequence Parallelism（序列并行，RingAttention）</a></li>
+<li class="toctree-l1"><a class="reference internal" href="multi-node.html">多节点训练</a></li>
+<li class="toctree-l1"><a class="reference internal" href="nvidia_docker.html">NVIDIA（英伟达） Docker（GPU（图形处理器） 容器支持，可选）</a></li>
+<li class="toctree-l1"><a class="reference internal" href="troubleshooting.html">故障排查</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="移动端导航菜单" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">OpenRLHF</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">常用 CLI（命令行接口）选项</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/common_options.rst.txt" rel="nofollow"> 查看原文源码</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="common-cli-options">
+<h1>常用 CLI（命令行接口）选项<a class="headerlink" href="#common-cli-options" title="Permalink to this heading"></a></h1>
+<p>OpenRLHF（人类反馈强化学习框架） 0.10.2 为每个 CLI 选项使用<strong>带点号的分组前缀</strong>，体现所属组件：<code class="docutils literal notranslate"><span class="pre">--ds.*</span></code> 对应 DeepSpeed（分布式深度学习优化库），<code class="docutils literal notranslate"><span class="pre">--vllm.*</span></code> 对应 vLLM（大模型推理引擎），<code class="docutils literal notranslate"><span class="pre">--rollout.*</span></code> 对应生成参数，<code class="docutils literal notranslate"><span class="pre">--data.*</span></code> / <code class="docutils literal notranslate"><span class="pre">--train.*</span></code> / <code class="docutils literal notranslate"><span class="pre">--eval.*</span></code> / <code class="docutils literal notranslate"><span class="pre">--ckpt.*</span></code> / <code class="docutils literal notranslate"><span class="pre">--logger.*</span></code> / <code class="docutils literal notranslate"><span class="pre">--algo.*</span></code> 对应流水线阶段；PPO（近端策略优化）使用按实体划分的 <code class="docutils literal notranslate"><span class="pre">--actor.*</span></code> / <code class="docutils literal notranslate"><span class="pre">--critic.*</span></code> / <code class="docutils literal notranslate"><span class="pre">--ref.*</span></code> / <code class="docutils literal notranslate"><span class="pre">--reward.*</span></code>，单模型 trainer（训练器）（SFT（监督微调）/RM（奖励模型）/DPO（直接偏好优化））使用 <code class="docutils literal notranslate"><span class="pre">--model.*</span></code>。早期扁平别名已移除，所有启动脚本必须使用新名称。</p>
+<p>本页是集中选项参考。Trainer 专用参数见 <a class="reference internal" href="non_rl.html"><span class="doc">监督与偏好训练（SFT（监督微调）/RM（奖励模型）/DPO（直接偏好优化））</span></a> 与 <a class="reference internal" href="agent_training.html"><span class="doc">RL（强化学习）训练指南</span></a>；端到端启动脚本位于 <a class="reference external" href="https://github.com/OpenRLHF/OpenRLHF/tree/main/examples/scripts">examples/scripts</a>。</p>
+<nav class="contents local" id="contents">
+<ul class="simple">
+<li><p><a class="reference internal" href="#section-map" id="id1">Section map</a></p></li>
+<li><p><a class="reference internal" href="#deepspeed" id="id2">DeepSpeed</a></p></li>
+<li><p><a class="reference internal" href="#vllm" id="id3">vLLM</a></p></li>
+<li><p><a class="reference internal" href="#rollout-generation" id="id4">Rollout / generation</a></p></li>
+<li><p><a class="reference internal" href="#data" id="id5">Data</a></p></li>
+<li><p><a class="reference internal" href="#training" id="id6">Training</a></p></li>
+<li><p><a class="reference internal" href="#evaluation" id="id7">Evaluation</a></p></li>
+<li><p><a class="reference internal" href="#checkpointing" id="id8">Checkpoint（检查点）保存与恢复</a></p></li>
+<li><p><a class="reference internal" href="#logging" id="id9">Logging</a></p></li>
+<li><p><a class="reference internal" href="#model-entity-flags" id="id10">Model / entity flags</a></p></li>
+<li><p><a class="reference internal" href="#optimizer-adam-or-muon" id="id11">Optimizer: Adam or Muon</a></p>
+<ul>
+<li><p><a class="reference internal" href="#pure-adam" id="id12">Pure Adam</a></p></li>
+<li><p><a class="reference internal" href="#muon-optim-muon" id="id13">Muon (<code class="docutils literal notranslate"><span class="pre">--optim</span> <span class="pre">muon</span></code>)</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#learning-rate-scheduler-gradient-clip" id="id14">Learning-rate scheduler &amp; gradient clip</a></p></li>
+<li><p><a class="reference internal" href="#lora-qlora" id="id15">LoRA / QLoRA</a></p></li>
+<li><p><a class="reference internal" href="#long-context-checkpointing-dedicated-pages" id="id16">Long context &amp; checkpointing (dedicated pages)</a></p></li>
+<li><p><a class="reference internal" href="#flag-migration-0-9-x-early-0-10-0-10-2" id="id17">Flag migration (0.9.x / early 0.10 → 0.10.2)</a></p>
+<ul>
+<li><p><a class="reference internal" href="#models" id="id18">Models</a></p></li>
+<li><p><a class="reference internal" href="#ray-placement-colocation" id="id19">Ray placement / colocation</a></p></li>
+<li><p><a class="reference internal" href="#vllm-deepspeed" id="id20">vLLM / DeepSpeed</a></p></li>
+<li><p><a class="reference internal" href="#rollout-data-train-eval-ckpt-logger" id="id21">Rollout / data / train / eval / ckpt / logger</a></p></li>
+<li><p><a class="reference internal" href="#rl-algorithm-loss" id="id22">RL algorithm / loss</a></p></li>
+<li><p><a class="reference internal" href="#optimizer-scheduler" id="id23">Optimizer / scheduler</a></p></li>
+<li><p><a class="reference internal" href="#sft-rm-dpo-model-level-loss-knobs" id="id24">SFT / RM / DPO model-level loss knobs</a></p></li>
+<li><p><a class="reference internal" href="#removed-flags" id="id25">Removed flags</a></p></li>
+</ul>
+</li>
+</ul>
+</nav>
+<section id="section-map">
+<h2><a class="toc-backref" href="#id1" role="doc-backlink">Section map</a><a class="headerlink" href="#section-map" title="Permalink to this heading"></a></h2>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 18%" />
+<col style="width: 20%" />
+<col style="width: 62%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>前缀</p></th>
+<th class="head"><p>所属组件</p></th>
+<th class="head"><p>包含内容</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--ds.*</span></code></p></td>
+<td><p>DeepSpeed 与模型加载</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">zero_stage</span></code>、<code class="docutils literal notranslate"><span class="pre">param_dtype</span></code>、<code class="docutils literal notranslate"><span class="pre">adam_offload</span></code>、<code class="docutils literal notranslate"><span class="pre">tensor_parallel_size</span></code>、<code class="docutils literal notranslate"><span class="pre">zpg</span></code>、<code class="docutils literal notranslate"><span class="pre">overlap_comm</span></code>、<code class="docutils literal notranslate"><span class="pre">grad_accum_dtype</span></code>、<code class="docutils literal notranslate"><span class="pre">deepcompile</span></code>、<code class="docutils literal notranslate"><span class="pre">enable_sleep</span></code>、<code class="docutils literal notranslate"><span class="pre">ring_attn_size</span></code>、<code class="docutils literal notranslate"><span class="pre">ring_attn_head_stride</span></code>、<code class="docutils literal notranslate"><span class="pre">use_universal_ckpt</span></code>、<code class="docutils literal notranslate"><span class="pre">attn_implementation</span></code>、<code class="docutils literal notranslate"><span class="pre">experts_implementation</span></code>、<code class="docutils literal notranslate"><span class="pre">use_liger_kernel</span></code>、<code class="docutils literal notranslate"><span class="pre">load_in_4bit</span></code>、<code class="docutils literal notranslate"><span class="pre">lora.{rank,</span> <span class="pre">alpha,</span> <span class="pre">dropout,</span> <span class="pre">target_modules}</span></code>、<code class="docutils literal notranslate"><span class="pre">packing_samples</span></code>、<code class="docutils literal notranslate"><span class="pre">value_head_prefix</span></code>（RM / PPO 奖励头）。</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--vllm.*</span></code></p></td>
+<td><p>vLLM 生成引擎</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">num_engines</span></code>, <code class="docutils literal notranslate"><span class="pre">tensor_parallel_size</span></code>, <code class="docutils literal notranslate"><span class="pre">gpu_memory_utilization</span></code>, <code class="docutils literal notranslate"><span class="pre">sync_backend</span></code>,
+<code class="docutils literal notranslate"><span class="pre">sync_with_ray</span></code>, <code class="docutils literal notranslate"><span class="pre">enforce_eager</span></code>, <code class="docutils literal notranslate"><span class="pre">enable_prefix_caching</span></code>, <code class="docutils literal notranslate"><span class="pre">enable_sleep</span></code>.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--rollout.*</span></code></p></td>
+<td><p>Rollout（采样生成）/采样</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">batch_size</span></code>, <code class="docutils literal notranslate"><span class="pre">micro_batch_size</span></code>, <code class="docutils literal notranslate"><span class="pre">n_samples_per_prompt</span></code>, <code class="docutils literal notranslate"><span class="pre">temperature</span></code>,
+<code class="docutils literal notranslate"><span class="pre">top_p</span></code>, <code class="docutils literal notranslate"><span class="pre">max_new_tokens</span></code>, <code class="docutils literal notranslate"><span class="pre">max_tokens_per_gpu</span></code>, <code class="docutils literal notranslate"><span class="pre">vllm_generate_batch_size</span></code>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--data.*</span></code></p></td>
+<td><p>数据集与分词</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">prompt_dataset</span></code>（PPO）或 <code class="docutils literal notranslate"><span class="pre">dataset</span></code>（SFT/RM/DPO）、数据划分 / 采样概率、键映射、模板处理、<code class="docutils literal notranslate"><span class="pre">max_len</span></code>、<code class="docutils literal notranslate"><span class="pre">max_samples</span></code>、<code class="docutils literal notranslate"><span class="pre">image_key</span></code>、<code class="docutils literal notranslate"><span class="pre">max_images_per_prompt</span></code>、<code class="docutils literal notranslate"><span class="pre">multiturn</span></code>、<code class="docutils literal notranslate"><span class="pre">dataloader_num_workers</span></code>。</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--train.*</span></code></p></td>
+<td><p>训练编排</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">batch_size</span></code>, <code class="docutils literal notranslate"><span class="pre">micro_batch_size</span></code>, <code class="docutils literal notranslate"><span class="pre">max_tokens_per_gpu</span></code>, <code class="docutils literal notranslate"><span class="pre">max_epochs</span></code>,
+<code class="docutils literal notranslate"><span class="pre">num_episodes</span></code>, <code class="docutils literal notranslate"><span class="pre">seed</span></code>, <code class="docutils literal notranslate"><span class="pre">full_determinism_enable</span></code>, <code class="docutils literal notranslate"><span class="pre">async_enable</span></code> /
+<code class="docutils literal notranslate"><span class="pre">async_queue_size</span></code> / <code class="docutils literal notranslate"><span class="pre">partial_rollout_enable</span></code>, <code class="docutils literal notranslate"><span class="pre">dynamic_batch_enable</span></code>,
+<code class="docutils literal notranslate"><span class="pre">enable_ema</span></code> / <code class="docutils literal notranslate"><span class="pre">ema_beta</span></code>, <code class="docutils literal notranslate"><span class="pre">agent_func_path</span></code>, <code class="docutils literal notranslate"><span class="pre">colocate_actor_ref</span></code> /
+<code class="docutils literal notranslate"><span class="pre">colocate_critic_reward</span></code> / <code class="docutils literal notranslate"><span class="pre">colocate_all</span></code>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--eval.*</span></code></p></td>
+<td><p>评估</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">dataset</span></code>, <code class="docutils literal notranslate"><span class="pre">split</span></code>, <code class="docutils literal notranslate"><span class="pre">steps</span></code>, <code class="docutils literal notranslate"><span class="pre">temperature</span></code>, <code class="docutils literal notranslate"><span class="pre">n_samples_per_prompt</span></code>.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--ckpt.*</span></code></p></td>
+<td><p>Checkpoint（检查点）保存与恢复</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">output_dir</span></code>, <code class="docutils literal notranslate"><span class="pre">path</span></code>, <code class="docutils literal notranslate"><span class="pre">save_steps</span></code>, <code class="docutils literal notranslate"><span class="pre">save_hf</span></code>, <code class="docutils literal notranslate"><span class="pre">disable_ds</span></code>, <code class="docutils literal notranslate"><span class="pre">max_num</span></code>,
+<code class="docutils literal notranslate"><span class="pre">max_mem</span></code>, <code class="docutils literal notranslate"><span class="pre">load_enable</span></code>, <code class="docutils literal notranslate"><span class="pre">best_metric_key</span></code>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--logger.*</span></code></p></td>
+<td><p>日志</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">logging_steps</span></code>, <code class="docutils literal notranslate"><span class="pre">tensorboard_dir</span></code>, <code class="docutils literal notranslate"><span class="pre">wandb.{key,</span> <span class="pre">org,</span> <span class="pre">group,</span> <span class="pre">project,</span> <span class="pre">run_name}</span></code>.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--algo.*</span></code></p></td>
+<td><p>RL（强化学习）算法（仅 PPO）</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">advantage.{estimator,</span> <span class="pre">gamma,</span> <span class="pre">lambd,</span> <span class="pre">no_std_norm,</span> <span class="pre">is_correction_enable,</span>
+<span class="pre">is_correction_type,</span> <span class="pre">is_correction_threshold}</span></code>,
+<code class="docutils literal notranslate"><span class="pre">kl.{init_coef,</span> <span class="pre">target,</span> <span class="pre">horizon,</span> <span class="pre">estimator,</span> <span class="pre">use_loss}</span></code>,
+<code class="docutils literal notranslate"><span class="pre">dynamic_filtering_enable</span></code>, <code class="docutils literal notranslate"><span class="pre">dynamic_filtering_range</span></code>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--actor.*</span></code> / <code class="docutils literal notranslate"><span class="pre">--critic.*</span></code> / <code class="docutils literal notranslate"><span class="pre">--ref.*</span></code> / <code class="docutils literal notranslate"><span class="pre">--reward.*</span></code></p></td>
+<td><p>各角色的模型配置（PPO）</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">model_name_or_path</span></code>、<code class="docutils literal notranslate"><span class="pre">num_nodes</span></code>、<code class="docutils literal notranslate"><span class="pre">num_gpus_per_node</span></code>、<code class="docutils literal notranslate"><span class="pre">gradient_checkpointing_enable</span></code>、<code class="docutils literal notranslate"><span class="pre">freeze_visual_encoder</span></code>（actor（策略模型）），<code class="docutils literal notranslate"><span class="pre">optim</span></code> / <code class="docutils literal notranslate"><span class="pre">adam.*</span></code> / <code class="docutils literal notranslate"><span class="pre">muon.*</span></code>，<code class="docutils literal notranslate"><span class="pre">lr_scheduler</span></code> / <code class="docutils literal notranslate"><span class="pre">lr_warmup_ratio</span></code> / <code class="docutils literal notranslate"><span class="pre">min_lr_ratio</span></code> / <code class="docutils literal notranslate"><span class="pre">max_norm</span></code>，以及各角色专用损失 / 裁剪 / 卸载参数。引擎级模型加载（<code class="docutils literal notranslate"><span class="pre">attn_implementation</span></code>、<code class="docutils literal notranslate"><span class="pre">lora.*</span></code>、<code class="docutils literal notranslate"><span class="pre">packing_samples</span></code>、<code class="docutils literal notranslate"><span class="pre">load_in_4bit</span></code>、<code class="docutils literal notranslate"><span class="pre">use_liger_kernel</span></code>）位于 <code class="docutils literal notranslate"><span class="pre">--ds.*</span></code> 下，由各角色共享。</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--model.*</span></code></p></td>
+<td><p>单模型损失/加载配置（SFT / RM / DPO）</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">model_name_or_path</span></code>、<code class="docutils literal notranslate"><span class="pre">gradient_checkpointing_enable</span></code>、<code class="docutils literal notranslate"><span class="pre">aux_loss_coef</span></code>、<code class="docutils literal notranslate"><span class="pre">beta</span></code>（DPO）、<code class="docutils literal notranslate"><span class="pre">ipo_enable</span></code>、<code class="docutils literal notranslate"><span class="pre">label_smoothing</span></code>、<code class="docutils literal notranslate"><span class="pre">nll_loss_coef</span></code>、<code class="docutils literal notranslate"><span class="pre">loss_type</span></code> / <code class="docutils literal notranslate"><span class="pre">compute_fp32_loss_enable</span></code> / <code class="docutils literal notranslate"><span class="pre">margin_loss_enable</span></code>（RM）、<code class="docutils literal notranslate"><span class="pre">pretrain_mode_enable</span></code>（SFT）。引擎级模型加载与 LoRA（低秩适配）位于 <code class="docutils literal notranslate"><span class="pre">--ds.*</span></code> 下。</p></td>
+</tr>
+<tr class="row-odd"><td><p>（扁平）</p></td>
+<td><p>启动器与特殊选项</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--optim</span></code>、<code class="docutils literal notranslate"><span class="pre">--lr_scheduler</span></code>、<code class="docutils literal notranslate"><span class="pre">--lr_warmup_ratio</span></code>、<code class="docutils literal notranslate"><span class="pre">--min_lr_ratio</span></code>、<code class="docutils literal notranslate"><span class="pre">--max_norm</span></code>（SFT/RM/DPO 使用扁平选项，PPO 按实体划分）、<code class="docutils literal notranslate"><span class="pre">--local_rank</span></code>（DeepSpeed 注入）、<code class="docutils literal notranslate"><span class="pre">--use_ms</span></code>（ModelScope（模型生态平台））。</p></td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="admonition-title">说明</p>
+<p>命名约定：名称尚未表达判断含义的布尔开关带显式 <code class="docutils literal notranslate"><span class="pre">_enable</span></code> 后缀，例如 <code class="docutils literal notranslate"><span class="pre">--reward.normalize_enable</span></code>、<code class="docutils literal notranslate"><span class="pre">--ckpt.load_enable</span></code>、<code class="docutils literal notranslate"><span class="pre">--train.async_enable</span></code>、<code class="docutils literal notranslate"><span class="pre">--train.dynamic_batch_enable</span></code>、<code class="docutils literal notranslate"><span class="pre">--algo.dynamic_filtering_enable</span></code>、<code class="docutils literal notranslate"><span class="pre">--algo.advantage.is_correction_enable</span></code>。已使用动词形式的选项（<code class="docutils literal notranslate"><span class="pre">freeze_*</span></code>、<code class="docutils literal notranslate"><span class="pre">save_*</span></code>、<code class="docutils literal notranslate"><span class="pre">enforce_*</span></code>、<code class="docutils literal notranslate"><span class="pre">colocate_*</span></code>、<code class="docutils literal notranslate"><span class="pre">use_*</span></code>、<code class="docutils literal notranslate"><span class="pre">*_offload</span></code>）不加后缀。</p>
+</div>
+</section>
+<section id="deepspeed">
+<h2><a class="toc-backref" href="#id2" role="doc-backlink">DeepSpeed</a><a class="headerlink" href="#deepspeed" title="Permalink to this heading"></a></h2>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 38%" />
+<col style="width: 62%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>标志</p></th>
+<th class="head"><p>含义</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--ds.zero_stage</span></code></p></td>
+<td><p>DeepSpeed ZeRO（零冗余优化器）阶段（0 / 1 / 2 / 3）。大模型使用 3。</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--ds.tensor_parallel_size</span></code></p></td>
+<td><p>DeepSpeed 张量并行（AutoTP（自动张量并行））规模——仅适用于 <code class="docutils literal notranslate"><span class="pre">--ds.zero_stage</span> <span class="pre">0/1/2</span></code>。</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--ds.adam_offload</span></code></p></td>
+<td><p>将 Adam（优化器）状态卸载至 CPU（中央处理器），节省 GPU（图形处理器）显存，但增加单步耗时。<strong>不兼容 Muon（优化器）</strong>——DS 的 Muon 实现将优化器状态保存在 GPU。</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--ds.param_dtype</span></code></p></td>
+<td><p>参数 dtype（数据类型）：<code class="docutils literal notranslate"><span class="pre">bf16</span></code>（默认）或 <code class="docutils literal notranslate"><span class="pre">fp16</span></code>。</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--ds.zpg</span></code></p></td>
+<td><p>ZeRO++ 最大分区大小（默认 <code class="docutils literal notranslate"><span class="pre">1</span></code>）。</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--ds.overlap_comm</span></code></p></td>
+<td><p>重叠反向传播与梯度归约（更大的 bucket（通信桶）预算，需要更多显存）。</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--ds.grad_accum_dtype</span></code></p></td>
+<td><p>Adam 梯度累积 dtype。</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--ds.deepcompile</span></code></p></td>
+<td><p>启用 <a class="reference external" href="https://github.com/deepspeedai/DeepSpeed/blob/master/blogs/deepcompile/README.md">DeepCompile</a> 图编译（PyTorch（深度学习框架）2.0+）。</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--ds.enable_sleep</span></code></p></td>
+<td><p>DeepSpeed 休眠模式——在训练步骤间释放 DeepSpeed 显存（Hybrid Engine（混合引擎）需配合 <code class="docutils literal notranslate"><span class="pre">--vllm.enable_sleep</span></code> + <code class="docutils literal notranslate"><span class="pre">--train.colocate_all</span></code>）。</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--ds.ring_attn_size</span></code> / <code class="docutils literal notranslate"><span class="pre">--ds.ring_attn_head_stride</span></code></p></td>
+<td><p>RingAttention（环形注意力）的序列并行组 / 注意力头步幅（参见 <a class="reference internal" href="sequence_parallelism.html"><span class="doc">Sequence Parallelism（序列并行，RingAttention）</span></a>）。</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--ds.use_universal_ckpt</span></code></p></td>
+<td><p>使用 DeepSpeed Universal Checkpoint（通用检查点）格式（不依赖 ZeRO 阶段或 world size（进程总数））。</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--ds.attn_implementation</span></code></p></td>
+<td><p>Attention（注意力）后端：<code class="docutils literal notranslate"><span class="pre">eager</span></code> / <code class="docutils literal notranslate"><span class="pre">flash_attention_2</span></code> / <code class="docutils literal notranslate"><span class="pre">flash_attention_3</span></code> / <code class="docutils literal notranslate"><span class="pre">kernels-community/vllm-flash-attn3</span></code>。由 trainer 加载的所有模型共享（actor / critic（价值评估模型）/ reward（奖励模型）/ reference（参考模型），或单个 SFT/RM/DPO 模型）。</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--ds.experts_implementation</span></code></p></td>
+<td><p>传递给 <code class="docutils literal notranslate"><span class="pre">transformers.from_pretrained</span></code> 的 MoE（混合专家模型）专家计算策略。<code class="docutils literal notranslate"><span class="pre">None</span></code>（默认）让 transformers（预训练模型库）自动选择（支持时选 <code class="docutils literal notranslate"><span class="pre">grouped_mm</span></code>，否则选 <code class="docutils literal notranslate"><span class="pre">eager</span></code>）；显式选项为 <code class="docutils literal notranslate"><span class="pre">eager</span></code> / <code class="docutils literal notranslate"><span class="pre">batched_mm</span></code> / <code class="docutils literal notranslate"><span class="pre">grouped_mm</span></code> / <code class="docutils literal notranslate"><span class="pre">deepgemm</span></code>。</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--ds.use_liger_kernel</span></code></p></td>
+<td><p>为融合算子启用 <a class="reference external" href="https://github.com/linkedin/Liger-Kernel">Liger Kernel</a>。</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--ds.load_in_4bit</span></code></p></td>
+<td><p>以 4-bit 加载基础模型（QLoRA（量化低秩适配），配合 <code class="docutils literal notranslate"><span class="pre">--ds.lora.*</span></code>）。</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--ds.lora.{rank,</span> <span class="pre">alpha,</span> <span class="pre">dropout,</span> <span class="pre">target_modules}</span></code></p></td>
+<td><p>LoRA / QLoRA 配置（设置 <code class="docutils literal notranslate"><span class="pre">--ds.lora.rank</span> <span class="pre">&gt;</span> <span class="pre">0</span></code> 启用）。仅支持 SFT / RM / DPO；Ray（分布式执行框架）+ vLLM PPO 不支持 LoRA。</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--ds.packing_samples</span></code></p></td>
+<td><p>在每个序列打包多个样本（Flash-Attention（高效注意力计算）路径），显著提高吞吐量。</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--ds.value_head_prefix</span></code></p></td>
+<td><p>序列回归模型的评分头名称前缀（RM 训练、PPO 奖励模型加载器、<code class="docutils literal notranslate"><span class="pre">serve_rm</span></code>）。默认 <code class="docutils literal notranslate"><span class="pre">score</span></code>。</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="vllm">
+<h2><a class="toc-backref" href="#id3" role="doc-backlink">vLLM</a><a class="headerlink" href="#vllm" title="Permalink to this heading"></a></h2>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 38%" />
+<col style="width: 62%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>标志</p></th>
+<th class="head"><p>含义</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--vllm.num_engines</span></code></p></td>
+<td><p>vLLM 引擎数量（<code class="docutils literal notranslate"><span class="pre">0</span></code> 完全禁用 vLLM，适用于非 RL trainer）。</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--vllm.tensor_parallel_size</span></code></p></td>
+<td><p>每个 vLLM 引擎的张量并行规模。</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--vllm.gpu_memory_utilization</span></code></p></td>
+<td><p>KV-cache（键值缓存）比例。8×A100-80G 上从 <code class="docutils literal notranslate"><span class="pre">0.5</span></code> 开始，稳定后提高。</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--vllm.sync_backend</span></code></p></td>
+<td><p>DeepSpeed → vLLM 权重同步后端（多 GPU 上推荐 <code class="docutils literal notranslate"><span class="pre">nccl</span></code>）。</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--vllm.sync_with_ray</span></code></p></td>
+<td><p>使用 Ray group（进程组）而非直接使用 NCCL（多 GPU 集合通信库）同步权重。</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--vllm.enforce_eager</span></code></p></td>
+<td><p>禁用 vLLM 中的 CUDA（NVIDIA 的并行计算平台） graph（GPU 计算图）（避免某些挂起情况，并减少显存占用）。</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--vllm.enable_prefix_caching</span></code></p></td>
+<td><p>启用 vLLM 前缀缓存（适合配合 <code class="docutils literal notranslate"><span class="pre">--rollout.n_samples_per_prompt</span> <span class="pre">&gt;</span> <span class="pre">1</span></code>）。</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--vllm.enable_sleep</span></code></p></td>
+<td><p>vLLM 休眠模式——在 rollout 之间释放大部分 vLLM 显存。仅适用于 Hybrid Engine；不兼容 <code class="docutils literal notranslate"><span class="pre">--train.async_enable</span></code>。</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="rollout-generation">
+<h2><a class="toc-backref" href="#id4" role="doc-backlink">Rollout / generation</a><a class="headerlink" href="#rollout-generation" title="Permalink to this heading"></a></h2>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 38%" />
+<col style="width: 62%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>标志</p></th>
+<th class="head"><p>含义</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--rollout.batch_size</span></code></p></td>
+<td><p>每个 rollout 步骤的 prompt（提示）批次大小（经验收集批次）。</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--rollout.micro_batch_size</span></code></p></td>
+<td><p>对已生成样本前向计算时，每 GPU 的 micro-batch（微批次）大小（例如重新计算对数概率）。</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--rollout.n_samples_per_prompt</span></code></p></td>
+<td><p>每个 prompt 的 completion（完整回答）数。RLOO（留一法策略梯度）/REINFORCE++-baseline（带基线的 REINFORCE++）/GRPO（组相对策略优化）/动态过滤要求为 <code class="docutils literal notranslate"><span class="pre">&gt;</span> <span class="pre">1</span></code>。</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--rollout.temperature</span></code> / <code class="docutils literal notranslate"><span class="pre">--rollout.top_p</span></code></p></td>
+<td><p>Rollout 中的 vLLM 采样参数。</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--rollout.max_new_tokens</span></code></p></td>
+<td><p>每个样本最多生成的 token（词元）数。<code class="docutils literal notranslate"><span class="pre">None</span></code> → 动态设为 <code class="docutils literal notranslate"><span class="pre">max_len</span> <span class="pre">-</span> <span class="pre">prompt_len</span></code>。</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--rollout.max_tokens_per_gpu</span></code></p></td>
+<td><p>Rollout 端前向计算的每 GPU token 预算（配合 <code class="docutils literal notranslate"><span class="pre">--train.dynamic_batch_enable</span></code>）。</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--rollout.vllm_generate_batch_size</span></code></p></td>
+<td><p>vLLM 生成批次。大于 <code class="docutils literal notranslate"><span class="pre">--rollout.batch_size</span></code> 时，需要 <code class="docutils literal notranslate"><span class="pre">--train.async_enable</span></code>（超额采样的额外批次缓存于异步队列）。</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="data">
+<h2><a class="toc-backref" href="#id5" role="doc-backlink">Data</a><a class="headerlink" href="#data" title="Permalink to this heading"></a></h2>
+<p>各 trainer 共享。注意，<strong>prompt 输入</strong>选项不同：PPO 使用 <code class="docutils literal notranslate"><span class="pre">--data.prompt_dataset</span></code>（值为数据集路径，由旧 <code class="docutils literal notranslate"><span class="pre">--data.prompt</span></code> 重命名），SFT / RM / DPO 使用 <code class="docutils literal notranslate"><span class="pre">--data.dataset</span></code>。</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 38%" />
+<col style="width: 62%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>标志</p></th>
+<th class="head"><p>含义</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--data.prompt_dataset</span></code> <em>（PPO）</em> / <code class="docutils literal notranslate"><span class="pre">--data.dataset</span></code> <em>（SFT/RM/DPO）</em></p></td>
+<td><p>HuggingFace（模型生态平台）数据集名称或路径。混合数据集时用逗号分隔。</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--data.prompt_probs</span></code> <em>（PPO）</em> / <code class="docutils literal notranslate"><span class="pre">--data.dataset_probs</span></code> <em>（SFT/RM/DPO）</em></p></td>
+<td><p>混合多个数据集时的采样概率（例如 <code class="docutils literal notranslate"><span class="pre">0.1,0.4,0.5</span></code>）。</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--data.prompt_split</span></code> <em>（PPO）</em> / <code class="docutils literal notranslate"><span class="pre">--data.dataset_split</span></code> <em>（SFT/RM/DPO）</em></p></td>
+<td><p>HF 数据划分名称（默认 <code class="docutils literal notranslate"><span class="pre">train</span></code>）。</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--data.input_key</span></code> / <code class="docutils literal notranslate"><span class="pre">--data.output_key</span></code> / <code class="docutils literal notranslate"><span class="pre">--data.label_key</span></code></p></td>
+<td><p>Prompt、SFT 目标与 RL 标准答案标签的 JSON（数据交换格式）键。</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--data.prompt_key</span></code> / <code class="docutils literal notranslate"><span class="pre">--data.chosen_key</span></code> / <code class="docutils literal notranslate"><span class="pre">--data.rejected_key</span></code></p></td>
+<td><p>偏好数据集的键（RM / DPO）。</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--data.image_key</span></code></p></td>
+<td><p>VLM（视觉语言模型）图像路径 / URL 键（默认 <code class="docutils literal notranslate"><span class="pre">images</span></code>）。</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--data.apply_chat_template</span></code></p></td>
+<td><p>应用 tokenizer（分词器）的聊天模板。</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--data.tokenizer_chat_template</span></code></p></td>
+<td><p>覆盖 tokenizer 的默认聊天模板。</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--data.input_template</span></code></p></td>
+<td><p>不使用聊天模板时的纯文本格式字符串（例如 <code class="docutils literal notranslate"><span class="pre">$'User:</span> <span class="pre">{}\nAssistant:</span> <span class="pre">'</span></code>）。</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--data.max_len</span></code></p></td>
+<td><p>最大总序列长度（prompt + response）。</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--data.max_samples</span></code></p></td>
+<td><p>训练样本数上限。</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--data.dataloader_num_workers</span></code></p></td>
+<td><p>DataLoader（数据加载器）worker 数（默认 <code class="docutils literal notranslate"><span class="pre">0</span></code>；Ray 训练须确保每个 actor 分配足够 CPU）。</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--data.disable_fast_tokenizer</span></code></p></td>
+<td><p>强制 <code class="docutils literal notranslate"><span class="pre">use_fast=False</span></code>，应用于 <code class="docutils literal notranslate"><span class="pre">AutoTokenizer</span></code>。</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--data.multiturn</span></code></p></td>
+<td><p><em>（SFT）</em>在紧凑多轮聊天数据上训练（损失应用于所有 assistant（助手）轮次）。需要 <code class="docutils literal notranslate"><span class="pre">--data.apply_chat_template</span></code>。</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--data.max_images_per_prompt</span></code></p></td>
+<td><p><em>（PPO VLM）</em>vLLM 每个 prompt 的最大图片数（<code class="docutils literal notranslate"><span class="pre">0</span></code> = 仅文本）。</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="training">
+<h2><a class="toc-backref" href="#id6" role="doc-backlink">Training</a><a class="headerlink" href="#training" title="Permalink to this heading"></a></h2>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 38%" />
+<col style="width: 62%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>标志</p></th>
+<th class="head"><p>含义</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--train.batch_size</span></code> / <code class="docutils literal notranslate"><span class="pre">--train.micro_batch_size</span></code></p></td>
+<td><p>全局与每 GPU 训练批次大小。</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--train.max_tokens_per_gpu</span></code></p></td>
+<td><p>训练时每 GPU token 预算（配合 <code class="docutils literal notranslate"><span class="pre">--train.dynamic_batch_enable</span></code>）。</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--train.max_epochs</span></code></p></td>
+<td><p>每次 rollout 的 PPO 优化 epoch（轮次）数（SFT / RM / DPO 则为遍历数据集的轮次）。</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--train.num_episodes</span></code> <em>（PPO）</em></p></td>
+<td><p>RL episode（训练回合）总数（一个 episode = 完整遍历一次 prompt 集）。</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--train.seed</span></code></p></td>
+<td><p>全局随机种子（默认 <code class="docutils literal notranslate"><span class="pre">42</span></code>）。</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--train.full_determinism_enable</span></code></p></td>
+<td><p>逐位可复现行为（较慢；vLLM v1 + 固定随机种子路径）。</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--train.dynamic_batch_enable</span></code></p></td>
+<td><p>按 token 预算而非样本数量组成 micro-batch，能更好地打包变长序列。配合 <code class="docutils literal notranslate"><span class="pre">--train.max_tokens_per_gpu</span></code> / <code class="docutils literal notranslate"><span class="pre">--rollout.max_tokens_per_gpu</span></code>。</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--train.async_enable</span></code> / <code class="docutils literal notranslate"><span class="pre">--train.async_queue_size</span></code> / <code class="docutils literal notranslate"><span class="pre">--train.partial_rollout_enable</span></code></p></td>
+<td><p>异步流水线控制（参见 <a class="reference internal" href="async_training.html"><span class="doc">异步训练与 Partial Rollout（可中断并恢复的部分采样生成）</span></a>）。</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--train.enable_ema</span></code> / <code class="docutils literal notranslate"><span class="pre">--train.ema_beta</span></code></p></td>
+<td><p>跟踪 actor 的 EMA（指数移动平均）副本（参见 <a class="reference internal" href="checkpoint.html"><span class="doc">Checkpoint（检查点）保存与恢复</span></a>）。</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--train.agent_func_path</span></code></p></td>
+<td><p>多轮 agent（智能体）Python 文件。配置多轮执行器（参见 <a class="reference internal" href="agent_training.html"><span class="doc">RL（强化学习）训练指南</span></a>）。</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--train.colocate_actor_ref</span></code> / <code class="docutils literal notranslate"><span class="pre">--train.colocate_critic_reward</span></code> / <code class="docutils literal notranslate"><span class="pre">--train.colocate_all</span></code></p></td>
+<td><p>Ray / vLLM 资源放置的角色共置配置（参见 <a class="reference internal" href="hybrid_engine.html"><span class="doc">Hybrid Engine（混合引擎）</span></a>）。</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="evaluation">
+<h2><a class="toc-backref" href="#id7" role="doc-backlink">Evaluation</a><a class="headerlink" href="#evaluation" title="Permalink to this heading"></a></h2>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">--eval.dataset</span></code>：评估数据集路径（PPO 配合 <code class="docutils literal notranslate"><span class="pre">--data.prompt_dataset</span></code>；仅限使用奖励函数的运行）。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--eval.split</span></code>：评估数据划分（不同 trainer 默认值不同）。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--eval.steps</span></code>：每 <em>N</em> 个训练步评估一次（<code class="docutils literal notranslate"><span class="pre">-1</span></code> 禁用）。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--eval.temperature</span></code> / <code class="docutils literal notranslate"><span class="pre">--eval.n_samples_per_prompt</span></code> <em>（PPO）</em>：评估 rollout 的采样参数。</p></li>
+</ul>
+</section>
+<section id="checkpointing">
+<h2><a class="toc-backref" href="#id8" role="doc-backlink">Checkpoint（检查点）保存与恢复</a><a class="headerlink" href="#checkpointing" title="Permalink to this heading"></a></h2>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 38%" />
+<col style="width: 62%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>标志</p></th>
+<th class="head"><p>含义</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--ckpt.output_dir</span></code></p></td>
+<td><p>最终 HuggingFace 格式模型保存路径（训练结束始终写入）。</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--ckpt.path</span></code></p></td>
+<td><p>可恢复的 DeepSpeed 格式 checkpoint 目录。</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--ckpt.save_steps</span></code></p></td>
+<td><p>两次 checkpoint 保存之间的步数（<code class="docutils literal notranslate"><span class="pre">-1</span></code> = 从不保存）。</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--ckpt.save_hf</span></code></p></td>
+<td><p>每个 checkpoint 同时导出 HF 格式模型。</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--ckpt.disable_ds</span></code></p></td>
+<td><p>跳过 DeepSpeed checkpoint，训练进度无法恢复。</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--ckpt.max_num</span></code> / <code class="docutils literal notranslate"><span class="pre">--ckpt.max_mem</span></code></p></td>
+<td><p>保留的 checkpoint 数量 / 总大小（GB）上限。</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--ckpt.load_enable</span></code></p></td>
+<td><p>从 <code class="docutils literal notranslate"><span class="pre">--ckpt.path</span></code> 恢复；无有效 checkpoint 时平稳回退到重新训练。</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--ckpt.best_metric_key</span></code> <em>（PPO）</em></p></td>
+<td><p>保存最佳 checkpoint 的评估指标键（空值 = 自动检测第一个 <code class="docutils literal notranslate"><span class="pre">pass1</span></code>；<code class="docutils literal notranslate"><span class="pre">none</span></code> = 禁用）。</p></td>
+</tr>
+</tbody>
+</table>
+<p>详细语义与 SFT/PPO 示例见 <a class="reference internal" href="checkpoint.html"><span class="doc">Checkpoint（检查点）保存与恢复</span></a>。</p>
+</section>
+<section id="logging">
+<h2><a class="toc-backref" href="#id9" role="doc-backlink">Logging</a><a class="headerlink" href="#logging" title="Permalink to this heading"></a></h2>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">--logger.logging_steps</span></code>：每 <em>N</em> 个训练步骤记录一次日志。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--logger.wandb.key</span> <span class="pre">{token-or-True}</span></code>：Wandb（实验跟踪平台）日志（<code class="docutils literal notranslate"><span class="pre">True</span></code> 使用先前的 <code class="docutils literal notranslate"><span class="pre">wandb</span> <span class="pre">login</span></code>）。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--logger.wandb.org</span></code> / <code class="docutils literal notranslate"><span class="pre">--logger.wandb.group</span></code> / <code class="docutils literal notranslate"><span class="pre">--logger.wandb.project</span></code> / <code class="docutils literal notranslate"><span class="pre">--logger.wandb.run_name</span></code>：Wandb 元数据。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--logger.tensorboard_dir</span> <span class="pre">{logdir}</span></code>：TensorBoard（训练可视化工具）日志路径。</p></li>
+</ul>
+</section>
+<section id="model-entity-flags">
+<h2><a class="toc-backref" href="#id10" role="doc-backlink">Model / entity flags</a><a class="headerlink" href="#model-entity-flags" title="Permalink to this heading"></a></h2>
+<p><strong>PPO</strong> 通过四个平行配置分组组织模型配置：</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 22%" />
+<col style="width: 78%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>前缀</p></th>
+<th class="head"><p>作用范围</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--actor.*</span></code></p></td>
+<td><p>策略模型（参与训练）。包含优化器 / 调度器 / 梯度裁剪、损失参数（<code class="docutils literal notranslate"><span class="pre">eps_clip</span></code>、<code class="docutils literal notranslate"><span class="pre">dual_clip</span></code>、<code class="docutils literal notranslate"><span class="pre">entropy_coef</span></code>、<code class="docutils literal notranslate"><span class="pre">aux_loss_coef</span></code>、<code class="docutils literal notranslate"><span class="pre">policy_loss_type</span></code>、<code class="docutils literal notranslate"><span class="pre">entropy_coef</span></code>）、<code class="docutils literal notranslate"><span class="pre">gradient_checkpointing_enable</span></code>、<code class="docutils literal notranslate"><span class="pre">freeze_visual_encoder</span></code>。</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--critic.*</span></code></p></td>
+<td><p>价值网络。包含独立优化器配置分组，以及 <code class="docutils literal notranslate"><span class="pre">value_clip</span></code>、<code class="docutils literal notranslate"><span class="pre">save_value_network</span></code>、<code class="docutils literal notranslate"><span class="pre">freezing_steps</span></code>（critic 预热时冻结 <strong>actor</strong>；尽管名称如此，它位于 critic 分组下，配合 critic 训练）。</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--ref.*</span></code></p></td>
+<td><p>冻结的参考模型。<code class="docutils literal notranslate"><span class="pre">offload</span></code> 在前向计算之间将其移至 CPU。</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--reward.*</span></code></p></td>
+<td><p>奖励模型 / 函数。包含 <code class="docutils literal notranslate"><span class="pre">model_name_or_path</span></code>、<code class="docutils literal notranslate"><span class="pre">remote_url</span></code>（HTTP（网络协议）RM 或本地 <code class="docutils literal notranslate"><span class="pre">.py</span></code> 奖励函数）、<code class="docutils literal notranslate"><span class="pre">normalize_enable</span></code>、<code class="docutils literal notranslate"><span class="pre">clip_range</span></code>、<code class="docutils literal notranslate"><span class="pre">overlong_buffer_len</span></code> / <code class="docutils literal notranslate"><span class="pre">overlong_penalty_factor</span></code>、<code class="docutils literal notranslate"><span class="pre">stop_properly_penalty_coef</span></code>、<code class="docutils literal notranslate"><span class="pre">offload</span></code>。评分头前缀位于 <code class="docutils literal notranslate"><span class="pre">--ds.value_head_prefix</span></code> 下。</p></td>
+</tr>
+</tbody>
+</table>
+<p>每个 PPO 实体均有自己的 <code class="docutils literal notranslate"><span class="pre">--{entity}.num_nodes</span></code> / <code class="docutils literal notranslate"><span class="pre">--{entity}.num_gpus_per_node</span></code>。</p>
+<p>引擎级模型加载选项——<code class="docutils literal notranslate"><span class="pre">--ds.attn_implementation</span></code>、<code class="docutils literal notranslate"><span class="pre">--ds.experts_implementation</span></code>、<code class="docutils literal notranslate"><span class="pre">--ds.use_liger_kernel</span></code>、<code class="docutils literal notranslate"><span class="pre">--ds.load_in_4bit</span></code>、<code class="docutils literal notranslate"><span class="pre">--ds.lora.*</span></code>、<code class="docutils literal notranslate"><span class="pre">--ds.packing_samples</span></code>——由所有角色<strong>共享</strong>，不能为每个实体分别设置注意力实现或 LoRA 配置。</p>
+<p><strong>SFT / RM / DPO</strong> 使用单模型命名空间 <code class="docutils literal notranslate"><span class="pre">--model.*</span></code>：</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 38%" />
+<col style="width: 62%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>标志</p></th>
+<th class="head"><p>含义</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--model.model_name_or_path</span></code></p></td>
+<td><p>HF 模型名称或路径。</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--model.gradient_checkpointing_enable</span></code> / <code class="docutils literal notranslate"><span class="pre">--model.gradient_checkpointing_reentrant</span></code></p></td>
+<td><p>以计算换取显存（重新计算激活值）；reentrant（重入模式）开关。</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--model.aux_loss_coef</span></code></p></td>
+<td><p>MoE 负载均衡损失系数（MoE 模型为 <code class="docutils literal notranslate"><span class="pre">&gt;</span> <span class="pre">0</span></code>）。</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--model.beta</span></code> <em>（DPO）</em></p></td>
+<td><p>DPO 温度。</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--model.ipo_enable</span></code> / <code class="docutils literal notranslate"><span class="pre">--model.label_smoothing</span></code> / <code class="docutils literal notranslate"><span class="pre">--model.nll_loss_coef</span></code> <em>（DPO）</em></p></td>
+<td><p>IPO（隐式偏好优化）开关 / cDPO（保守 DPO）平滑 / NLL（负对数似然）正则化。</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--model.loss_type</span></code> / <code class="docutils literal notranslate"><span class="pre">--model.compute_fp32_loss_enable</span></code> / <code class="docutils literal notranslate"><span class="pre">--model.margin_loss_enable</span></code> <em>（RM）</em></p></td>
+<td><p>奖励模型损失类型。评分头前缀为 <code class="docutils literal notranslate"><span class="pre">--ds.value_head_prefix</span></code>。</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--model.pretrain_mode_enable</span></code> <em>（SFT）</em></p></td>
+<td><p>预训练形式损失（对整个序列预测下一 token）。</p></td>
+</tr>
+</tbody>
+</table>
+<p>SFT / RM / DPO 的引擎级模型加载（<code class="docutils literal notranslate"><span class="pre">attn_implementation</span></code>、<code class="docutils literal notranslate"><span class="pre">experts_implementation</span></code>、<code class="docutils literal notranslate"><span class="pre">use_liger_kernel</span></code>、<code class="docutils literal notranslate"><span class="pre">load_in_4bit</span></code>、<code class="docutils literal notranslate"><span class="pre">lora.*</span></code>、<code class="docutils literal notranslate"><span class="pre">packing_samples</span></code>）同样位于 <code class="docutils literal notranslate"><span class="pre">--ds.*</span></code> 下。</p>
+</section>
+<section id="optimizer-adam-or-muon">
+<h2><a class="toc-backref" href="#id11" role="doc-backlink">Optimizer: Adam or Muon</a><a class="headerlink" href="#optimizer-adam-or-muon" title="Permalink to this heading"></a></h2>
+<p>0.10.2 在 <code class="docutils literal notranslate"><span class="pre">--adam.*</span></code> 与 <code class="docutils literal notranslate"><span class="pre">--muon.*</span></code> 下提供两个平行的优化器配置分组，在运行时由单一开关选择：</p>
+<ul class="simple">
+<li><p>SFT / RM / DPO 中使用 <code class="docutils literal notranslate"><span class="pre">--optim</span> <span class="pre">{adam,</span> <span class="pre">muon}</span></code>。</p></li>
+<li><p>PPO 中使用 <code class="docutils literal notranslate"><span class="pre">--actor.optim</span> <span class="pre">{adam,</span> <span class="pre">muon}</span></code> 与 <code class="docutils literal notranslate"><span class="pre">--critic.optim</span> <span class="pre">{adam,</span> <span class="pre">muon}</span></code>（actor / critic 相互独立，原生支持 actor 使用 Muon、critic 使用 Adam）。</p></li>
+</ul>
+<section id="pure-adam">
+<h3><a class="toc-backref" href="#id12" role="doc-backlink">Pure Adam</a><a class="headerlink" href="#pure-adam" title="Permalink to this heading"></a></h3>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 38%" />
+<col style="width: 62%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>标志</p></th>
+<th class="head"><p>含义</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--adam.lr</span></code> <em>（SFT/RM/DPO）</em> / <code class="docutils literal notranslate"><span class="pre">--actor.adam.lr</span></code> / <code class="docutils literal notranslate"><span class="pre">--critic.adam.lr</span></code> <em>（PPO）</em></p></td>
+<td><p>学习率。</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--adam.betas</span></code></p></td>
+<td><p>Adam β₁/β₂（默认 <code class="docutils literal notranslate"><span class="pre">(0.9,</span> <span class="pre">0.95)</span></code>）。</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--adam.eps</span></code></p></td>
+<td><p>Adam ε（默认 <code class="docutils literal notranslate"><span class="pre">1e-8</span></code>）。</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--adam.weight_decay</span></code></p></td>
+<td><p>L2 权重衰减（替换旧扁平选项 <code class="docutils literal notranslate"><span class="pre">--l2</span></code>）。</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="muon-optim-muon">
+<h3><a class="toc-backref" href="#id13" role="doc-backlink">Muon (<code class="docutils literal notranslate"><span class="pre">--optim</span> <span class="pre">muon</span></code>)</a><a class="headerlink" href="#muon-optim-muon" title="Permalink to this heading"></a></h3>
+<p>DeepSpeed 的 <code class="docutils literal notranslate"><span class="pre">MuonWithAuxAdam</span></code> 对二维隐藏层权重矩阵使用 Muon，并为 embedding（嵌入）/LM head（语言模型输出头）/一维参数使用平行的 AdamW（解耦权重衰减优化器）子组。OpenRLHF 0.10.2 直接控制此行为：</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 38%" />
+<col style="width: 62%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>标志</p></th>
+<th class="head"><p>含义</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--muon.lr</span></code></p></td>
+<td><p>Muon 二维权重组的 LR（学习率）（默认 <code class="docutils literal notranslate"><span class="pre">0.02</span></code>）。</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--muon.momentum</span></code></p></td>
+<td><p>Muon 动量（默认 <code class="docutils literal notranslate"><span class="pre">0.95</span></code>）。</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--muon.ns_steps</span></code></p></td>
+<td><p>Newton–Schulz（矩阵迭代法）迭代次数。<strong>占位选项</strong>——DeepSpeed 0.18.x 将其硬编码为 <code class="docutils literal notranslate"><span class="pre">ns_steps=5</span></code>，位于 <code class="docutils literal notranslate"><span class="pre">muon_update()</span></code> 内；更改此值会触发运行时警告。提供此选项是为兼容未来 DeepSpeed 版本。</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--muon.nesterov</span></code> / <code class="docutils literal notranslate"><span class="pre">--muon.no_nesterov</span></code></p></td>
+<td><p>Nesterov（前瞻动量）开关。<strong>占位选项</strong>——DeepSpeed 0.18.x 硬编码为启用 Nesterov。</p></td>
+</tr>
+</tbody>
+</table>
+<p>aux-Adam（辅助 Adam）子组（embedding / LM head / 一维参数 / value head（价值输出头））复用 <code class="docutils literal notranslate"><span class="pre">--adam.lr</span></code>、<code class="docutils literal notranslate"><span class="pre">--adam.betas</span></code>、<code class="docutils literal notranslate"><span class="pre">--adam.eps</span></code>、<code class="docutils literal notranslate"><span class="pre">--adam.weight_decay</span></code>，LR 调度器同时控制<strong>两个</strong>组。PPO 按实体配置：<code class="docutils literal notranslate"><span class="pre">--actor.muon.lr</span></code>、<code class="docutils literal notranslate"><span class="pre">--critic.muon.lr</span></code> 等。</p>
+<div class="admonition note">
+<p class="admonition-title">说明</p>
+<p><strong>要求与注意事项</strong></p>
+<ul class="simple">
+<li><p>需要 <strong>DeepSpeed ≥ 0.18.2</strong>。</p></li>
+<li><p>不兼容 <code class="docutils literal notranslate"><span class="pre">--ds.adam_offload</span></code>，Muon 将状态保存在 GPU。</p></li>
+<li><p><strong>共享权重衰减。</strong>DeepSpeed 0.18.x 为 Muon 与 aux-Adam 参数组写入同一个 <code class="docutils literal notranslate"><span class="pre">weight_decay</span></code>；因此 OpenRLHF 从 <code class="docutils literal notranslate"><span class="pre">--adam.weight_decay</span></code>（或 <code class="docutils literal notranslate"><span class="pre">--{entity}.adam.weight_decay</span></code>）读取并应用于两组。不存在独立 <code class="docutils literal notranslate"><span class="pre">--muon.weight_decay</span></code> 选项。</p></li>
+<li><p><strong>Muon 不应用 bias（偏置）/LayerNorm（层归一化）的权重衰减豁免。</strong>DS Muon 将扁平 <code class="docutils literal notranslate"><span class="pre">Parameter</span></code> 列表通过 <code class="docutils literal notranslate"><span class="pre">p.use_muon</span></code> 划分，不接受参数组字典；初始化后拆分组会使 ZeRO 的 bit16/fp32 元数据失去同步。纯 Adam 路径仍照常免除 bias / LayerNorm 的权重衰减。</p></li>
+<li><p><strong>0.10.2 修复。</strong>此前 aux-Adam 子组会静默继承 Muon 的 LR（<code class="docutils literal notranslate"><span class="pre">0.02</span></code>），导致预训练 embedding 在最初约 100 步被破坏。0.10.2 显式向 DS 传递 <code class="docutils literal notranslate"><span class="pre">muon_lr</span></code> 与 <code class="docutils literal notranslate"><span class="pre">adam_lr</span></code>，使各组遵循自己的初始 LR。务必设置 <code class="docutils literal notranslate"><span class="pre">--adam.lr</span></code>（PPO：<code class="docutils literal notranslate"><span class="pre">--actor.adam.lr</span></code>），当使用 <code class="docutils literal notranslate"><span class="pre">--optim</span> <span class="pre">muon</span></code> 训练时。</p></li>
+</ul>
+</div>
+</section>
+</section>
+<section id="learning-rate-scheduler-gradient-clip">
+<h2><a class="toc-backref" href="#id14" role="doc-backlink">Learning-rate scheduler &amp; gradient clip</a><a class="headerlink" href="#learning-rate-scheduler-gradient-clip" title="Permalink to this heading"></a></h2>
+<p>单模型 trainer 使用扁平选项，PPO 则按实体嵌套。</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 40%" />
+<col style="width: 60%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>SFT / RM / DPO</p></th>
+<th class="head"><p>PPO（按实体）</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--lr_scheduler</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--actor.lr_scheduler</span></code> / <code class="docutils literal notranslate"><span class="pre">--critic.lr_scheduler</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--lr_warmup_ratio</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--actor.lr_warmup_ratio</span></code> / <code class="docutils literal notranslate"><span class="pre">--critic.lr_warmup_ratio</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--min_lr_ratio</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--actor.min_lr_ratio</span></code> / <code class="docutils literal notranslate"><span class="pre">--critic.min_lr_ratio</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--max_norm</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--actor.max_norm</span></code> / <code class="docutils literal notranslate"><span class="pre">--critic.max_norm</span></code></p></td>
+</tr>
+</tbody>
+</table>
+<p>默认调度器为 <code class="docutils literal notranslate"><span class="pre">cosine_with_min_lr</span></code>，配合 <code class="docutils literal notranslate"><span class="pre">warmup_ratio</span> <span class="pre">0.03</span></code> 与 <code class="docutils literal notranslate"><span class="pre">min_lr_ratio</span> <span class="pre">0.1</span></code>。</p>
+</section>
+<section id="lora-qlora">
+<h2><a class="toc-backref" href="#id15" role="doc-backlink">LoRA / QLoRA</a><a class="headerlink" href="#lora-qlora" title="Permalink to this heading"></a></h2>
+<p>SFT / RM / DPO 支持 LoRA / QLoRA。Ray + vLLM PPO <strong>不支持</strong>。</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 38%" />
+<col style="width: 62%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>选项（SFT/RM/DPO）</p></th>
+<th class="head"><p>含义</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--ds.lora.rank</span></code></p></td>
+<td><p>设为 <code class="docutils literal notranslate"><span class="pre">&gt;</span> <span class="pre">0</span></code> 以启用 LoRA（低秩更新的秩）。</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--ds.lora.alpha</span></code></p></td>
+<td><p>LoRA alpha 缩放。</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--ds.lora.dropout</span></code></p></td>
+<td><p>LoRA dropout（随机丢弃）（传递给 HuggingFace PEFT（参数高效微调））。</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--ds.lora.target_modules</span></code></p></td>
+<td><p>PEFT 目标模块（例如 <code class="docutils literal notranslate"><span class="pre">q_proj</span> <span class="pre">k_proj</span> <span class="pre">v_proj</span> <span class="pre">o_proj</span></code> 或 <code class="docutils literal notranslate"><span class="pre">all-linear</span></code>）。</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--ds.load_in_4bit</span></code></p></td>
+<td><p>以 4-bit 加载基础模型（QLoRA）。</p></td>
+</tr>
+</tbody>
+</table>
+<p>仅保存 adapter（适配器）。部署前将其与基础模型合并：</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>-m<span class="w"> </span>openrlhf.cli.lora_combiner<span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>--model_path<span class="w"> </span>meta-llama/Meta-Llama-3-8B<span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>--lora_path<span class="w"> </span>./checkpoint/llama3-8b-rm<span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>--output_path<span class="w"> </span>./checkpoint/llama-3-8b-rm-combined<span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>--is_rm<span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>--param_dtype<span class="w"> </span>bf16
+</pre></div>
+</div>
+<p>合并奖励模型时使用 <code class="docutils literal notranslate"><span class="pre">--is_rm</span></code>（保留评分头）。</p>
+</section>
+<section id="long-context-checkpointing-dedicated-pages">
+<h2><a class="toc-backref" href="#id16" role="doc-backlink">Long context &amp; checkpointing (dedicated pages)</a><a class="headerlink" href="#long-context-checkpointing-dedicated-pages" title="Permalink to this heading"></a></h2>
+<ul class="simple">
+<li><p><strong>RingAttention</strong> —— <code class="docutils literal notranslate"><span class="pre">--ds.ring_attn_size</span></code> / <code class="docutils literal notranslate"><span class="pre">--ds.ring_attn_head_stride</span></code>；参见 <a class="reference internal" href="sequence_parallelism.html"><span class="doc">Sequence Parallelism（序列并行，RingAttention）</span></a>。</p></li>
+<li><p><strong>Checkpoint 保存与恢复</strong> —— <code class="docutils literal notranslate"><span class="pre">--ckpt.*</span></code> + <code class="docutils literal notranslate"><span class="pre">--train.enable_ema</span></code>；参见 <a class="reference internal" href="checkpoint.html"><span class="doc">Checkpoint（检查点）保存与恢复</span></a>。</p></li>
+</ul>
+</section>
+<section id="flag-migration-0-9-x-early-0-10-0-10-2">
+<span id="flag-migration"></span><h2><a class="toc-backref" href="#id17" role="doc-backlink">Flag migration (0.9.x / early 0.10 → 0.10.2)</a><a class="headerlink" href="#flag-migration-0-9-x-early-0-10-0-10-2" title="Permalink to this heading"></a></h2>
+<p>升级检查清单：用右侧带点号的选项替换左侧旧扁平选项。<code class="docutils literal notranslate"><span class="pre">examples/scripts/</span></code> 中所有启动脚本均已迁移，可作为可运行参考。</p>
+<section id="models">
+<h3><a class="toc-backref" href="#id18" role="doc-backlink">Models</a><a class="headerlink" href="#models" title="Permalink to this heading"></a></h3>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 45%" />
+<col style="width: 55%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>旧版</p></th>
+<th class="head"><p>新版</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--pretrain</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--actor.model_name_or_path</span></code> <em>（PPO）</em> / <code class="docutils literal notranslate"><span class="pre">--model.model_name_or_path</span></code> <em>（SFT/RM/DPO）</em></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--reward_pretrain</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--reward.model_name_or_path</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--ref_pretrain</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--ref.model_name_or_path</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--critic_pretrain</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--critic.model_name_or_path</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--remote_rm_url</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--reward.remote_url</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--attn_implementation</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--ds.attn_implementation</span></code> <em>（所有 trainer；移至此处，使 PPO 运行中每个模型共享一个后端）</em></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--use_liger_kernel</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--ds.use_liger_kernel</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--load_in_4bit</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--ds.load_in_4bit</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--gradient_checkpointing</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--actor.gradient_checkpointing_enable</span></code> / <code class="docutils literal notranslate"><span class="pre">--model.gradient_checkpointing_enable</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--gradient_checkpointing_use_reentrant</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--actor.gradient_checkpointing_reentrant</span></code> / <code class="docutils literal notranslate"><span class="pre">--model.gradient_checkpointing_reentrant</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--freeze_visual_encoder</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--actor.freeze_visual_encoder</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--lora_rank</span></code> / <code class="docutils literal notranslate"><span class="pre">--lora_alpha</span></code> / <code class="docutils literal notranslate"><span class="pre">--lora_dropout</span></code> / <code class="docutils literal notranslate"><span class="pre">--target_modules</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--ds.lora.rank</span></code> / <code class="docutils literal notranslate"><span class="pre">...alpha</span></code> / <code class="docutils literal notranslate"><span class="pre">...dropout</span></code> / <code class="docutils literal notranslate"><span class="pre">...target_modules</span></code></p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="ray-placement-colocation">
+<h3><a class="toc-backref" href="#id19" role="doc-backlink">Ray placement / colocation</a><a class="headerlink" href="#ray-placement-colocation" title="Permalink to this heading"></a></h3>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 45%" />
+<col style="width: 55%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>旧版</p></th>
+<th class="head"><p>新版</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--{actor,critic,ref,reward}_num_nodes</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--{..}.num_nodes</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--{actor,critic,ref,reward}_num_gpus_per_node</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--{..}.num_gpus_per_node</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--colocate_actor_ref</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--train.colocate_actor_ref</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--colocate_critic_reward</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--train.colocate_critic_reward</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--colocate_all_models</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--train.colocate_all</span></code></p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="vllm-deepspeed">
+<h3><a class="toc-backref" href="#id20" role="doc-backlink">vLLM / DeepSpeed</a><a class="headerlink" href="#vllm-deepspeed" title="Permalink to this heading"></a></h3>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 45%" />
+<col style="width: 55%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>旧版</p></th>
+<th class="head"><p>新版</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--vllm_num_engines</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--vllm.num_engines</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--vllm_tensor_parallel_size</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--vllm.tensor_parallel_size</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--vllm_sync_backend</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--vllm.sync_backend</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--vllm_sync_with_ray</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--vllm.sync_with_ray</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--vllm_gpu_memory_utilization</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--vllm.gpu_memory_utilization</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--enforce_eager</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--vllm.enforce_eager</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--enable_prefix_caching</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--vllm.enable_prefix_caching</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--vllm_enable_sleep</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--vllm.enable_sleep</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--deepspeed_enable_sleep</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--ds.enable_sleep</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--zero_stage</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--ds.zero_stage</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--param_dtype</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--ds.param_dtype</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--adam_offload</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--ds.adam_offload</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--zpg</span></code> / <code class="docutils literal notranslate"><span class="pre">--overlap_comm</span></code> / <code class="docutils literal notranslate"><span class="pre">--grad_accum_dtype</span></code> / <code class="docutils literal notranslate"><span class="pre">--deepcompile</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--ds.zpg</span></code> / <code class="docutils literal notranslate"><span class="pre">--ds.overlap_comm</span></code> / <code class="docutils literal notranslate"><span class="pre">--ds.grad_accum_dtype</span></code> / <code class="docutils literal notranslate"><span class="pre">--ds.deepcompile</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--use_universal_ckpt</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--ds.use_universal_ckpt</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--ds_tensor_parallel_size</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--ds.tensor_parallel_size</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--ring_attn_size</span></code> / <code class="docutils literal notranslate"><span class="pre">--ring_head_stride</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--ds.ring_attn_size</span></code> / <code class="docutils literal notranslate"><span class="pre">--ds.ring_attn_head_stride</span></code></p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="rollout-data-train-eval-ckpt-logger">
+<h3><a class="toc-backref" href="#id21" role="doc-backlink">Rollout / data / train / eval / ckpt / logger</a><a class="headerlink" href="#rollout-data-train-eval-ckpt-logger" title="Permalink to this heading"></a></h3>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 45%" />
+<col style="width: 55%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>旧版</p></th>
+<th class="head"><p>新版</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--temperature</span></code> / <code class="docutils literal notranslate"><span class="pre">--top_p</span></code> / <code class="docutils literal notranslate"><span class="pre">--max_new_tokens</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--rollout.temperature</span></code> / <code class="docutils literal notranslate"><span class="pre">--rollout.top_p</span></code> / <code class="docutils literal notranslate"><span class="pre">--rollout.max_new_tokens</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--rollout_batch_size</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--rollout.batch_size</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--micro_rollout_batch_size</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--rollout.micro_batch_size</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--n_samples_per_prompt</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--rollout.n_samples_per_prompt</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--vllm_generate_batch_size</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--rollout.vllm_generate_batch_size</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--rollout_max_tokens_per_gpu</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--rollout.max_tokens_per_gpu</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--prompt_data</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--data.prompt_dataset</span></code> <em>（值为数据集路径，而非单条 prompt）</em></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--prompt_data_probs</span></code> / <code class="docutils literal notranslate"><span class="pre">--prompt_split</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--data.prompt_probs</span></code> / <code class="docutils literal notranslate"><span class="pre">--data.prompt_split</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--dataset</span></code> / <code class="docutils literal notranslate"><span class="pre">--dataset_probs</span></code> / <code class="docutils literal notranslate"><span class="pre">--dataset_split</span></code> / <code class="docutils literal notranslate"><span class="pre">--train_split</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--data.dataset</span></code> / <code class="docutils literal notranslate"><span class="pre">--data.dataset_probs</span></code> / <code class="docutils literal notranslate"><span class="pre">--data.dataset_split</span></code> <em>（``–train_split`` 重复，已移除。）</em></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--input_key</span></code> / <code class="docutils literal notranslate"><span class="pre">--output_key</span></code> / <code class="docutils literal notranslate"><span class="pre">--label_key</span></code> / <code class="docutils literal notranslate"><span class="pre">--image_key</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--data.input_key</span></code> / <code class="docutils literal notranslate"><span class="pre">--data.output_key</span></code> / <code class="docutils literal notranslate"><span class="pre">--data.label_key</span></code> / <code class="docutils literal notranslate"><span class="pre">--data.image_key</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--prompt_key</span></code> / <code class="docutils literal notranslate"><span class="pre">--chosen_key</span></code> / <code class="docutils literal notranslate"><span class="pre">--rejected_key</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--data.prompt_key</span></code> / <code class="docutils literal notranslate"><span class="pre">--data.chosen_key</span></code> / <code class="docutils literal notranslate"><span class="pre">--data.rejected_key</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--input_template</span></code> / <code class="docutils literal notranslate"><span class="pre">--apply_chat_template</span></code> / <code class="docutils literal notranslate"><span class="pre">--tokenizer_chat_template</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--data.input_template</span></code> / <code class="docutils literal notranslate"><span class="pre">--data.apply_chat_template</span></code> / <code class="docutils literal notranslate"><span class="pre">--data.tokenizer_chat_template</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--max_len</span></code> / <code class="docutils literal notranslate"><span class="pre">--max_samples</span></code> / <code class="docutils literal notranslate"><span class="pre">--multiturn</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--data.max_len</span></code> / <code class="docutils literal notranslate"><span class="pre">--data.max_samples</span></code> / <code class="docutils literal notranslate"><span class="pre">--data.multiturn</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--packing_samples</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--ds.packing_samples</span></code> <em>（从 ``–data.*`` 移至此处，让引擎级加载器可读取）</em></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--max_images_per_prompt</span></code> / <code class="docutils literal notranslate"><span class="pre">--dataloader_num_workers</span></code> / <code class="docutils literal notranslate"><span class="pre">--disable_fast_tokenizer</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--data.max_images_per_prompt</span></code> / <code class="docutils literal notranslate"><span class="pre">--data.dataloader_num_workers</span></code> / <code class="docutils literal notranslate"><span class="pre">--data.disable_fast_tokenizer</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--train_batch_size</span></code> / <code class="docutils literal notranslate"><span class="pre">--micro_train_batch_size</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--train.batch_size</span></code> / <code class="docutils literal notranslate"><span class="pre">--train.micro_batch_size</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--train_max_tokens_per_gpu</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--train.max_tokens_per_gpu</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--max_epochs</span></code> / <code class="docutils literal notranslate"><span class="pre">--num_episodes</span></code> / <code class="docutils literal notranslate"><span class="pre">--seed</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--train.max_epochs</span></code> / <code class="docutils literal notranslate"><span class="pre">--train.num_episodes</span></code> / <code class="docutils literal notranslate"><span class="pre">--train.seed</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--full_determinism</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--train.full_determinism_enable</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--async_train</span></code> / <code class="docutils literal notranslate"><span class="pre">--async_queue_size</span></code> / <code class="docutils literal notranslate"><span class="pre">--partial_rollout</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--train.async_enable</span></code> / <code class="docutils literal notranslate"><span class="pre">--train.async_queue_size</span></code> / <code class="docutils literal notranslate"><span class="pre">--train.partial_rollout_enable</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--use_dynamic_batch</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--train.dynamic_batch_enable</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--enable_ema</span></code> / <code class="docutils literal notranslate"><span class="pre">--ema_beta</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--train.enable_ema</span></code> / <code class="docutils literal notranslate"><span class="pre">--train.ema_beta</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--agent_func_path</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--train.agent_func_path</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--eval_dataset</span></code> / <code class="docutils literal notranslate"><span class="pre">--eval_split</span></code> / <code class="docutils literal notranslate"><span class="pre">--eval_steps</span></code> / <code class="docutils literal notranslate"><span class="pre">--eval_temperature</span></code> / <code class="docutils literal notranslate"><span class="pre">--eval_n_samples_per_prompt</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--eval.dataset</span></code> / <code class="docutils literal notranslate"><span class="pre">--eval.split</span></code> / <code class="docutils literal notranslate"><span class="pre">--eval.steps</span></code> / <code class="docutils literal notranslate"><span class="pre">--eval.temperature</span></code> / <code class="docutils literal notranslate"><span class="pre">--eval.n_samples_per_prompt</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--save_path</span></code> / <code class="docutils literal notranslate"><span class="pre">--ckpt_path</span></code> / <code class="docutils literal notranslate"><span class="pre">--save_steps</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--ckpt.output_dir</span></code> / <code class="docutils literal notranslate"><span class="pre">--ckpt.path</span></code> / <code class="docutils literal notranslate"><span class="pre">--ckpt.save_steps</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--save_hf_ckpt</span></code> / <code class="docutils literal notranslate"><span class="pre">--disable_ds_ckpt</span></code> / <code class="docutils literal notranslate"><span class="pre">--max_ckpt_num</span></code> / <code class="docutils literal notranslate"><span class="pre">--max_ckpt_mem</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--ckpt.save_hf</span></code> / <code class="docutils literal notranslate"><span class="pre">--ckpt.disable_ds</span></code> / <code class="docutils literal notranslate"><span class="pre">--ckpt.max_num</span></code> / <code class="docutils literal notranslate"><span class="pre">--ckpt.max_mem</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--load_checkpoint</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--ckpt.load_enable</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--best_metric_key</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--ckpt.best_metric_key</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--use_wandb</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--logger.wandb.key</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--wandb_org</span></code> / <code class="docutils literal notranslate"><span class="pre">--wandb_group</span></code> / <code class="docutils literal notranslate"><span class="pre">--wandb_project</span></code> / <code class="docutils literal notranslate"><span class="pre">--wandb_run_name</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--logger.wandb.org</span></code> / <code class="docutils literal notranslate"><span class="pre">...group</span></code> / <code class="docutils literal notranslate"><span class="pre">...project</span></code> / <code class="docutils literal notranslate"><span class="pre">...run_name</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--use_tensorboard</span></code> / <code class="docutils literal notranslate"><span class="pre">--logging_steps</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--logger.tensorboard_dir</span></code> / <code class="docutils literal notranslate"><span class="pre">--logger.logging_steps</span></code></p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="rl-algorithm-loss">
+<h3><a class="toc-backref" href="#id22" role="doc-backlink">RL algorithm / loss</a><a class="headerlink" href="#rl-algorithm-loss" title="Permalink to this heading"></a></h3>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 45%" />
+<col style="width: 55%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>旧版</p></th>
+<th class="head"><p>新版</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--advantage_estimator</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--algo.advantage.estimator</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--gamma</span></code> / <code class="docutils literal notranslate"><span class="pre">--lambd</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--algo.advantage.gamma</span></code> / <code class="docutils literal notranslate"><span class="pre">--algo.advantage.lambd</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--no_advantage_std_norm</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--algo.advantage.no_std_norm</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--enable_vllm_is_correction</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--algo.advantage.is_correction_enable</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--vllm_is_correction_type</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--algo.advantage.is_correction_type</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--vllm_is_truncated_threshold</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--algo.advantage.is_correction_threshold</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--init_kl_coef</span></code> / <code class="docutils literal notranslate"><span class="pre">--kl_target</span></code> / <code class="docutils literal notranslate"><span class="pre">--kl_horizon</span></code> / <code class="docutils literal notranslate"><span class="pre">--kl_estimator</span></code> / <code class="docutils literal notranslate"><span class="pre">--use_kl_loss</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--algo.kl.init_coef</span></code> / <code class="docutils literal notranslate"><span class="pre">...target</span></code> / <code class="docutils literal notranslate"><span class="pre">...horizon</span></code> / <code class="docutils literal notranslate"><span class="pre">...estimator</span></code> / <code class="docutils literal notranslate"><span class="pre">...use_loss</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--dynamic_filtering</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--algo.dynamic_filtering_enable</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--dynamic_filtering_reward_range</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--algo.dynamic_filtering_range</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--eps_clip</span></code> / <code class="docutils literal notranslate"><span class="pre">--eps_clip_low_high</span></code> / <code class="docutils literal notranslate"><span class="pre">--dual_clip</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--actor.eps_clip</span></code> / <code class="docutils literal notranslate"><span class="pre">--actor.eps_clip_low_high</span></code> / <code class="docutils literal notranslate"><span class="pre">--actor.dual_clip</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--policy_loss_type</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--actor.policy_loss_type</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--entropy_loss_coef</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--actor.entropy_coef</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--aux_loss_coef</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--actor.aux_loss_coef</span></code> <em>（PPO）</em> / <code class="docutils literal notranslate"><span class="pre">--model.aux_loss_coef</span></code> <em>（SFT/RM/DPO）</em></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--freezing_actor_steps</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--critic.freezing_steps</span></code> <em>（配合 critic 预热）</em></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--value_clip</span></code> / <code class="docutils literal notranslate"><span class="pre">--save_value_network</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--critic.value_clip</span></code> / <code class="docutils literal notranslate"><span class="pre">--critic.save_value_network</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--ref_offload</span></code> / <code class="docutils literal notranslate"><span class="pre">--ref_reward_offload</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--ref.offload</span></code> / <code class="docutils literal notranslate"><span class="pre">--reward.offload</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--normalize_reward</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--reward.normalize_enable</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--reward_clip_range</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--reward.clip_range</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--overlong_buffer_len</span></code> / <code class="docutils literal notranslate"><span class="pre">--overlong_penalty_factor</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--reward.overlong_buffer_len</span></code> / <code class="docutils literal notranslate"><span class="pre">--reward.overlong_penalty_factor</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--stop_properly_penalty_coef</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--reward.stop_properly_penalty_coef</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--value_head_prefix</span></code> <em>（PPO 奖励 / RM 训练 / serve_rm）</em></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--ds.value_head_prefix</span></code></p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="optimizer-scheduler">
+<h3><a class="toc-backref" href="#id23" role="doc-backlink">Optimizer / scheduler</a><a class="headerlink" href="#optimizer-scheduler" title="Permalink to this heading"></a></h3>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 45%" />
+<col style="width: 55%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>旧版</p></th>
+<th class="head"><p>新版</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--learning_rate</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--adam.lr</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--actor_learning_rate</span></code> / <code class="docutils literal notranslate"><span class="pre">--critic_learning_rate</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--actor.adam.lr</span></code> / <code class="docutils literal notranslate"><span class="pre">--critic.adam.lr</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--adam_betas</span></code> / <code class="docutils literal notranslate"><span class="pre">--adam_eps</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--adam.betas</span></code> / <code class="docutils literal notranslate"><span class="pre">--adam.eps</span></code>（PPO 按实体配置）</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--l2</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--adam.weight_decay</span></code>（PPO 按实体配置；Muon 下，DS 将同一值写入 Muon 与 aux-Adam 两组，不存在独立 <code class="docutils literal notranslate"><span class="pre">--muon.weight_decay</span></code>）</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--muon_lr</span></code> / <code class="docutils literal notranslate"><span class="pre">--muon_momentum</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--muon.lr</span></code> / <code class="docutils literal notranslate"><span class="pre">--muon.momentum</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--muon_ns_steps</span></code> / <code class="docutils literal notranslate"><span class="pre">--muon_nesterov</span></code> / <code class="docutils literal notranslate"><span class="pre">--no_muon_nesterov</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--muon.ns_steps</span></code> / <code class="docutils literal notranslate"><span class="pre">--muon.nesterov</span></code> / <code class="docutils literal notranslate"><span class="pre">--muon.no_nesterov</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--muon_adam_lr</span></code></p></td>
+<td><p><em>已移除</em> —— aux-Adam 子组复用 <code class="docutils literal notranslate"><span class="pre">--adam.lr</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--lr_scheduler</span></code> / <code class="docutils literal notranslate"><span class="pre">--lr_warmup_ratio</span></code> / <code class="docutils literal notranslate"><span class="pre">--min_lr_ratio</span></code> / <code class="docutils literal notranslate"><span class="pre">--max_norm</span></code></p></td>
+<td><p>SFT / RM / DPO 使用扁平选项；PPO 使用 <code class="docutils literal notranslate"><span class="pre">--actor.*</span></code> / <code class="docutils literal notranslate"><span class="pre">--critic.*</span></code></p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="sft-rm-dpo-model-level-loss-knobs">
+<h3><a class="toc-backref" href="#id24" role="doc-backlink">SFT / RM / DPO model-level loss knobs</a><a class="headerlink" href="#sft-rm-dpo-model-level-loss-knobs" title="Permalink to this heading"></a></h3>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 45%" />
+<col style="width: 55%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>旧版</p></th>
+<th class="head"><p>新版</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--beta</span></code> <em>（DPO）</em></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--model.beta</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--ipo</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--model.ipo_enable</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--label_smoothing</span></code> / <code class="docutils literal notranslate"><span class="pre">--nll_loss_coef</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--model.label_smoothing</span></code> / <code class="docutils literal notranslate"><span class="pre">--model.nll_loss_coef</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--compute_fp32_loss</span></code> / <code class="docutils literal notranslate"><span class="pre">--margin_loss</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--model.compute_fp32_loss_enable</span></code> / <code class="docutils literal notranslate"><span class="pre">--model.margin_loss_enable</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--pretrain_mode</span></code> <em>（SFT）</em></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--model.pretrain_mode_enable</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--loss</span></code> <em>（RM）</em></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--model.loss_type</span></code></p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="removed-flags">
+<h3><a class="toc-backref" href="#id25" role="doc-backlink">Removed flags</a><a class="headerlink" href="#removed-flags" title="Permalink to this heading"></a></h3>
+<p>以下选项在早期版本中是无效代码或重复项，现已删除：</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">--actor_init_on_gpu</span></code>（旧版在 GPU 上初始化的路径；不再需要）。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--ptx_coef</span></code> / <code class="docutils literal notranslate"><span class="pre">--actor.ptx_coef</span></code>（PPO-PTX 从未接入 trainer）。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--train.perf_tracking_enable</span></code>（无对应实现）。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--train_split</span></code>（与 <code class="docutils literal notranslate"><span class="pre">--data.dataset_split</span></code> 重复）。</p></li>
+</ul>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="non_rl.html" class="btn btn-neutral float-left" title="Supervised &amp; Preference Training (SFT / RM / DPO)" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="hybrid_engine.html" class="btn btn-neutral float-right" title="Hybrid Engine" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, OpenRLHF.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="zh-CN" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RL（强化学习）训练指南 &mdash; OpenRLHF 0.10.2 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js?v=69c39844"></script>
+        <script src="_static/doctools.js?v=888ff710"></script>
+        <script src="_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Supervised &amp; Preference Training (SFT / RM / DPO)" href="non_rl.html" />
+    <link rel="prev" title="Design Paradigm: Agent-Based Execution" href="agent_paradigm.html" /> 
+<script async type="text/javascript" src="/openrlhf-zh/_/static/javascript/readthedocs-addons.js"></script><meta name="readthedocs-project-slug" content="openrlhf" /><meta name="readthedocs-version-slug" content="latest" /><meta name="readthedocs-resolver-filename" content="/agent_training.html" /><meta name="readthedocs-http-status" content="200" /><link rel="stylesheet" href="chinese-font.css"><script defer src="offline.js"></script></head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            OpenRLHF
+          </a>
+              <div class="version">
+                0.10.2
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="搜索文档" aria-label="搜索文档" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="导航菜单">
+              <p class="caption" role="heading"><span class="caption-text">入门</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="quick_start.html">快速开始</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">核心概念</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="architecture.html">架构基础：Ray（分布式计算框架）+ vLLM（大模型推理引擎）分布式架构</a></li>
+<li class="toctree-l1"><a class="reference internal" href="agent_paradigm.html">设计范式：基于 Agent（智能体）的执行</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">训练指南</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">RL（强化学习）训练指南</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#quick-launch-ray-vllm">Quick Launch (Ray + vLLM)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#execution-modes">Execution Modes</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#single-turn-mode-default">Single-Turn Mode (default)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#multi-turn-mode">Multi-Turn Mode</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#rl-algorithms">RL Algorithms</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#optimizer-adam-or-muon-per-entity">Optimizer: Adam or Muon (per entity)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#tuning">Tuning</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#loss-clipping">Loss &amp; clipping</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#advantage-gae">Advantage / GAE</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#kl-control">KL control</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#entropy">Entropy</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#reward-shaping">Reward shaping</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#off-policy-correction-tis-icepop-seq-mask-tis">Off-policy correction (TIS / ICEPOP / Seq-Mask-TIS)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#dynamic-sampling-dapo">Dynamic sampling (DAPO)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#sampling-misc">Sampling &amp; misc</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#vision-language-model-vlm-rlhf">Vision-Language Model (VLM) RLHF</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#logging-evaluation">Logging &amp; evaluation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#reference-scripts">Reference scripts</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="non_rl.html">监督与偏好训练（SFT（监督微调）/RM（奖励模型）/DPO（直接偏好优化））</a></li>
+<li class="toctree-l1"><a class="reference internal" href="common_options.html">常用 CLI（命令行接口）选项</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">扩展与运维</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="hybrid_engine.html">Hybrid Engine（混合引擎）</a></li>
+<li class="toctree-l1"><a class="reference internal" href="async_training.html">异步训练与 Partial Rollout（可中断并恢复的部分采样生成）</a></li>
+<li class="toctree-l1"><a class="reference internal" href="performance.html">性能调优</a></li>
+<li class="toctree-l1"><a class="reference internal" href="checkpoint.html">Checkpoint（检查点）保存与恢复</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sequence_parallelism.html">Sequence Parallelism（序列并行，RingAttention）</a></li>
+<li class="toctree-l1"><a class="reference internal" href="multi-node.html">多节点训练</a></li>
+<li class="toctree-l1"><a class="reference internal" href="nvidia_docker.html">NVIDIA（英伟达） Docker（GPU（图形处理器） 容器支持，可选）</a></li>
+<li class="toctree-l1"><a class="reference internal" href="troubleshooting.html">故障排查</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="移动端导航菜单" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">OpenRLHF</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">RL（强化学习）训练指南</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/agent_training.rst.txt" rel="nofollow"> 查看原文源码</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="rl-training-guide">
+<h1>RL（强化学习）训练指南<a class="headerlink" href="#rl-training-guide" title="Permalink to this heading"></a></h1>
+<p>本页是 OpenRLHF（开源强化学习训练框架）中 <strong>RL 训练</strong>的完整参考。所有算法和执行模式都通过同一智能体执行流水线运行。</p>
+<p>监督学习方法（SFT（监督微调）、RM（奖励模型）、DPO（直接偏好优化））见 <a class="reference internal" href="non_rl.html"><span class="doc">监督与偏好训练（SFT（监督微调）/RM（奖励模型）/DPO（直接偏好优化））</span></a>；概念模型见 <a class="reference internal" href="agent_paradigm.html"><span class="doc">设计范式：基于 Agent（智能体）的执行</span></a>；通用 CLI（命令行接口）标志见 <a class="reference internal" href="common_options.html"><span class="doc">常用 CLI（命令行接口）选项</span></a>；同步与异步流水线见 <a class="reference internal" href="hybrid_engine.html"><span class="doc">Hybrid Engine（混合引擎）</span></a> 和 <a class="reference internal" href="async_training.html"><span class="doc">异步训练与 Partial Rollout（可中断并恢复的部分采样生成）</span></a>。</p>
+<div class="admonition note">
+<p class="admonition-title">说明</p>
+<p>本页所有标志均使用 <strong>0.10.2 分层 CLI</strong>。实体配置位于 <code class="docutils literal notranslate"><span class="pre">--actor.*</span></code> / <code class="docutils literal notranslate"><span class="pre">--critic.*</span></code> / <code class="docutils literal notranslate"><span class="pre">--ref.*</span></code> / <code class="docutils literal notranslate"><span class="pre">--reward.*</span></code> 下；流水线配置位于 <code class="docutils literal notranslate"><span class="pre">--ds.*</span></code> / <code class="docutils literal notranslate"><span class="pre">--vllm.*</span></code> / <code class="docutils literal notranslate"><span class="pre">--rollout.*</span></code> / <code class="docutils literal notranslate"><span class="pre">--data.*</span></code> / <code class="docutils literal notranslate"><span class="pre">--train.*</span></code> / <code class="docutils literal notranslate"><span class="pre">--eval.*</span></code> / <code class="docutils literal notranslate"><span class="pre">--ckpt.*</span></code> / <code class="docutils literal notranslate"><span class="pre">--logger.*</span></code> / <code class="docutils literal notranslate"><span class="pre">--algo.*</span></code> 下。<code class="docutils literal notranslate"><span class="pre">--pretrain</span></code> 或 <code class="docutils literal notranslate"><span class="pre">--remote_rm_url</span></code> 等旧的扁平标志已无法解析，见 <a class="reference internal" href="common_options.html#flag-migration"><span class="std std-ref">Flag migration (0.9.x / early 0.10 → 0.10.2)</span></a>。</p>
+</div>
+<nav class="contents local" id="contents">
+<ul class="simple">
+<li><p><a class="reference internal" href="#overview" id="id5">Overview</a></p></li>
+<li><p><a class="reference internal" href="#quick-launch-ray-vllm" id="id6">Quick Launch (Ray + vLLM)</a></p></li>
+<li><p><a class="reference internal" href="#execution-modes" id="id7">Execution Modes</a></p>
+<ul>
+<li><p><a class="reference internal" href="#single-turn-mode-default" id="id8">Single-Turn Mode (default)</a></p></li>
+<li><p><a class="reference internal" href="#multi-turn-mode" id="id9">Multi-Turn Mode</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#rl-algorithms" id="id10">RL Algorithms</a></p></li>
+<li><p><a class="reference internal" href="#optimizer-adam-or-muon-per-entity" id="id11">Optimizer: Adam or Muon (per entity)</a></p></li>
+<li><p><a class="reference internal" href="#tuning" id="id12">Tuning</a></p>
+<ul>
+<li><p><a class="reference internal" href="#loss-clipping" id="id13">Loss &amp; clipping</a></p></li>
+<li><p><a class="reference internal" href="#advantage-gae" id="id14">Advantage / GAE</a></p></li>
+<li><p><a class="reference internal" href="#kl-control" id="id15">KL control</a></p></li>
+<li><p><a class="reference internal" href="#entropy" id="id16">Entropy</a></p></li>
+<li><p><a class="reference internal" href="#reward-shaping" id="id17">Reward shaping</a></p></li>
+<li><p><a class="reference internal" href="#off-policy-correction-tis-icepop-seq-mask-tis" id="id18">Off-policy correction (TIS / ICEPOP / Seq-Mask-TIS)</a></p></li>
+<li><p><a class="reference internal" href="#dynamic-sampling-dapo" id="id19">Dynamic sampling (DAPO)</a></p></li>
+<li><p><a class="reference internal" href="#sampling-misc" id="id20">Sampling &amp; misc</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#vision-language-model-vlm-rlhf" id="id21">Vision-Language Model (VLM) RLHF</a></p></li>
+<li><p><a class="reference internal" href="#logging-evaluation" id="id22">Logging &amp; evaluation</a></p></li>
+<li><p><a class="reference internal" href="#reference-scripts" id="id23">Reference scripts</a></p></li>
+</ul>
+</nav>
+<section id="overview">
+<h2><a class="toc-backref" href="#id5" role="doc-backlink">Overview</a><a class="headerlink" href="#overview" title="Permalink to this heading"></a></h2>
+<p>OpenRLHF 的每次 RL 运行都组合了三项相互独立的选择：</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 35%" />
+<col style="width: 40%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>维度</p></th>
+<th class="head"><p>选项</p></th>
+<th class="head"><p>设置方式</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><strong>执行模式</strong></p></td>
+<td><p>单轮（默认）| 多轮</p></td>
+<td><p>默认 / <code class="docutils literal notranslate"><span class="pre">--reward.remote_url</span></code> | <code class="docutils literal notranslate"><span class="pre">--train.agent_func_path</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>RL 算法</strong></p></td>
+<td><p>PPO（近端策略优化）/ REINFORCE++（改进策略梯度方法）/ REINFORCE++-baseline（采用奖励基线的 REINFORCE++）/ RLOO（留一法奖励基线方法）/ GRPO（组相对策略优化）/ Dr. GRPO（修正 GRPO 偏差的变体）</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--algo.advantage.estimator</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><strong>流水线</strong></p></td>
+<td><p>同步（Hybrid Engine（混合引擎））| 异步（可选 partial rollout（可中断并恢复的部分采样生成））</p></td>
+<td><p><a class="reference internal" href="hybrid_engine.html"><span class="doc">Hybrid Engine（混合引擎）</span></a> | <a class="reference internal" href="async_training.html"><span class="doc">异步训练与 Partial Rollout（可中断并恢复的部分采样生成）</span></a></p></td>
+</tr>
+</tbody>
+</table>
+<p>这些维度相互独立：任何算法都能在任意模式和流水线中运行，因为每次 rollout（策略采样生成）都产生 token（文本词元）级轨迹，由损失层以相同方式使用。</p>
+</section>
+<section id="quick-launch-ray-vllm">
+<span id="rayppo"></span><h2><a class="toc-backref" href="#id6" role="doc-backlink">Quick Launch (Ray + vLLM)</a><a class="headerlink" href="#quick-launch-ray-vllm" title="Permalink to this heading"></a></h2>
+<p>文档中的默认 RL 示例是 <strong>Qwen3-4B-Thinking（通义千问推理模型）使用 REINFORCE++-baseline，在数学任务上进行 RLVR（基于可验证奖励的强化学习）训练</strong>。完整启动命令见 <a class="reference internal" href="hybrid_engine.html"><span class="doc">Hybrid Engine（混合引擎）</span></a>，下面是仅含关键标志的最小版本：</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># launch the master node of ray in a container</span>
+ray<span class="w"> </span>start<span class="w"> </span>--head<span class="w"> </span>--node-ip-address<span class="w"> </span><span class="m">0</span>.0.0.0<span class="w"> </span>--num-gpus<span class="w"> </span><span class="m">8</span>
+
+ray<span class="w"> </span>job<span class="w"> </span>submit<span class="w"> </span>--address<span class="o">=</span><span class="s2">&quot;http://127.0.0.1:8265&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>--runtime-env-json<span class="o">=</span><span class="s1">&#39;{&quot;working_dir&quot;: &quot;/openrlhf&quot;}&#39;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>--<span class="w"> </span>python3<span class="w"> </span>-m<span class="w"> </span>openrlhf.cli.train_ppo_ray<span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>--actor.model_name_or_path<span class="w"> </span>Qwen/Qwen3-4B-Thinking-2507<span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>--reward.remote_url<span class="w"> </span>examples/python/math_reward_func.py<span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>--data.prompt_dataset<span class="w"> </span>zhuzilin/dapo-math-17k<span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>--data.input_key<span class="w"> </span>prompt<span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>--data.label_key<span class="w"> </span>label<span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>--data.apply_chat_template<span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>--ds.packing_samples<span class="w"> </span><span class="se">\</span>
+<span class="w">   </span><span class="se">\</span>
+<span class="w">   </span>--ref.num_nodes<span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>--ref.num_gpus_per_node<span class="w"> </span><span class="m">4</span><span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>--actor.num_nodes<span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>--actor.num_gpus_per_node<span class="w"> </span><span class="m">4</span><span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>--vllm.num_engines<span class="w"> </span><span class="m">2</span><span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>--vllm.tensor_parallel_size<span class="w"> </span><span class="m">2</span><span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>--train.colocate_all<span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>--vllm.gpu_memory_utilization<span class="w"> </span><span class="m">0</span>.7<span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>--vllm.enable_sleep<span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>--ds.enable_sleep<span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>--vllm.sync_backend<span class="w"> </span>nccl<span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>--vllm.enforce_eager<span class="w"> </span><span class="se">\</span>
+<span class="w">   </span><span class="se">\</span>
+<span class="w">   </span>--algo.advantage.estimator<span class="w"> </span>reinforce_baseline<span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>--algo.kl.use_loss<span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>--algo.kl.estimator<span class="w"> </span>k2<span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>--algo.kl.init_coef<span class="w"> </span>1e-5<span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>--actor.entropy_coef<span class="w"> </span><span class="m">0</span>.0<span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>--algo.advantage.is_correction_enable<span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>--algo.advantage.is_correction_type<span class="w"> </span>icepop<span class="w"> </span><span class="se">\</span>
+<span class="w">   </span><span class="se">\</span>
+<span class="w">   </span>--rollout.batch_size<span class="w"> </span><span class="m">128</span><span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>--rollout.n_samples_per_prompt<span class="w"> </span><span class="m">8</span><span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>--train.batch_size<span class="w"> </span><span class="m">1024</span><span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>--algo.dynamic_filtering_enable<span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>--algo.dynamic_filtering_range<span class="w"> </span><span class="m">0</span>.0<span class="w"> </span><span class="m">1</span>.0<span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>--train.dynamic_batch_enable<span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>--data.max_len<span class="w"> </span><span class="m">74240</span><span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>--rollout.max_new_tokens<span class="w"> </span><span class="m">64000</span><span class="w"> </span><span class="se">\</span>
+<span class="w">   </span><span class="se">\</span>
+<span class="w">   </span>--ds.zero_stage<span class="w"> </span><span class="m">3</span><span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>--ds.param_dtype<span class="w"> </span>bf16<span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>--actor.gradient_checkpointing_enable<span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>--actor.adam.lr<span class="w"> </span>5e-7<span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>--ckpt.output_dir<span class="w"> </span>./exp/Qwen3-4B-Thinking
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">说明</p>
+<ul class="simple">
+<li><p>此处使用 Hybrid Engine；详细配置说明见 <a class="reference internal" href="hybrid_engine.html"><span class="doc">Hybrid Engine（混合引擎）</span></a>。</p></li>
+<li><p>Ray（分布式计算框架）+ vLLM（大模型推理引擎）目前<strong>不</strong>支持 LoRA（低秩适配）。</p></li>
+<li><p>自动将环境部署到 Ray worker（工作进程）：<code class="docutils literal notranslate"><span class="pre">--runtime-env-json='{&quot;setup_commands&quot;:</span> <span class="pre">[&quot;pip</span> <span class="pre">install</span> <span class="pre">openrlhf[vllm]&quot;]}'</span></code>。</p></li>
+<li><p>GPU（图形处理器）索引问题：<code class="docutils literal notranslate"><span class="pre">export</span> <span class="pre">RAY_EXPERIMENTAL_NOSET_CUDA_VISIBLE_DEVICES=1</span></code>（NVIDIA（英伟达））或 <code class="docutils literal notranslate"><span class="pre">RAY_EXPERIMENTAL_NOSET_ROCR_VISIBLE_DEVICES=1</span></code>（AMD）。</p></li>
+</ul>
+</div>
+</section>
+<section id="execution-modes">
+<h2><a class="toc-backref" href="#id7" role="doc-backlink">Execution Modes</a><a class="headerlink" href="#execution-modes" title="Permalink to this heading"></a></h2>
+<p>执行模式决定<strong>如何采集经验</strong>。请根据任务结构选择。</p>
+<section id="single-turn-mode-default">
+<span id="single-turn-mode"></span><h3><a class="toc-backref" href="#id8" role="doc-backlink">Single-Turn Mode (default)</a><a class="headerlink" href="#single-turn-mode-default" title="Permalink to this heading"></a></h3>
+<p>一个提示词 → 一个回复 → 一个奖励，覆盖绝大多数 RLHF（基于人类反馈的强化学习）场景。奖励来源为以下之一：</p>
+<ol class="arabic simple">
+<li><p><strong>已训练的奖励模型</strong> — 设置 <code class="docutils literal notranslate"><span class="pre">--reward.model_name_or_path</span></code>。</p></li>
+<li><p><strong>远程 HTTP（超文本传输协议）RM 服务器</strong> — 设置 <code class="docutils literal notranslate"><span class="pre">--reward.remote_url</span> <span class="pre">http://host:5000/get_reward</span></code>。</p></li>
+<li><p><strong>本地 Python（编程语言）奖励函数</strong> — 设置 <code class="docutils literal notranslate"><span class="pre">--reward.remote_url</span> <span class="pre">/path/to/reward_func.py</span></code>。这可实现面向代码、数学、格式和多目标奖励等任务的 Reinforced Fine-Tuning（强化微调，RFT）。</p></li>
+</ol>
+<p><strong>远程奖励模型服务器。</strong>在 HTTP 端点后部署大型 RM：</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>-m<span class="w"> </span>openrlhf.cli.serve_rm<span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>--reward.model_name_or_path<span class="w"> </span>OpenRLHF/Llama-3-8b-rm-700k<span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>--port<span class="w"> </span><span class="m">5000</span><span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>--ds.param_dtype<span class="w"> </span>bf16<span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>--ds.attn_implementation<span class="w"> </span>flash_attention_2<span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>--reward.normalize_enable<span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>--data.max_len<span class="w"> </span><span class="m">8192</span><span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>--batch_size<span class="w"> </span><span class="m">16</span>
+
+<span class="c1"># then in the trainer:</span>
+python3<span class="w"> </span>-m<span class="w"> </span>openrlhf.cli.train_ppo_ray<span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>--reward.remote_url<span class="w"> </span>http://localhost:5000/get_reward<span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>...
+</pre></div>
+</div>
+<p><strong>自定义奖励函数（RFT）。</strong>将 Python 文件路径传给 <code class="docutils literal notranslate"><span class="pre">--reward.remote_url</span></code>，OpenRLHF 会在运行时导入并调用。通过 <code class="docutils literal notranslate"><span class="pre">--data.label_key</span> <span class="pre">answer</span></code> 传入标准答案字段：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># reward_func.py</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">reward_func</span><span class="p">(</span><span class="n">queries</span><span class="p">,</span> <span class="n">prompts</span><span class="p">,</span> <span class="n">labels</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Args:</span>
+<span class="sd">        queries: list[str] — full text (prompt + response) per sample</span>
+<span class="sd">        prompts: list[str] — original prompts</span>
+<span class="sd">        labels:  list[str] — ground-truth labels (from --data.label_key)</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        dict with:</span>
+<span class="sd">            rewards:    Tensor — used in advantage calculation</span>
+<span class="sd">            scores:     Tensor — used by --algo.dynamic_filtering_enable (typically in [0, 1])</span>
+<span class="sd">            extra_logs: dict   — values logged to Wandb / TensorBoard</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">batch_size</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">queries</span><span class="p">)</span>
+    <span class="n">reward</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">batch_size</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="n">label</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">queries</span><span class="p">,</span> <span class="n">labels</span><span class="p">)):</span>
+        <span class="n">reward</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="k">if</span> <span class="n">my_check</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="n">label</span><span class="p">)</span> <span class="k">else</span> <span class="mf">0.0</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;rewards&quot;</span><span class="p">:</span> <span class="n">reward</span><span class="p">,</span>
+        <span class="s2">&quot;scores&quot;</span><span class="p">:</span> <span class="n">reward</span><span class="p">,</span>
+        <span class="s2">&quot;extra_logs&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;accuracy&quot;</span><span class="p">:</span> <span class="n">reward</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()},</span>
+    <span class="p">}</span>
+</pre></div>
+</div>
+<p>端到端示例：<a class="reference external" href="https://github.com/OpenRLHF/OpenRLHF/blob/main/examples/scripts/train_ppo_with_reward_fn.sh">train_ppo_with_reward_fn.sh</a>。</p>
+<div class="admonition tip">
+<p class="admonition-title">提示</p>
+<p>典型 RFT 场景：代码（运行单元测试）、数学（验证最终答案）、JSON（结构化数据格式）格式校验（正则检查）、多目标奖励（组合信号）。</p>
+</div>
+</section>
+<section id="multi-turn-mode">
+<span id="id1"></span><h3><a class="toc-backref" href="#id9" role="doc-backlink">Multi-Turn Mode</a><a class="headerlink" href="#multi-turn-mode" title="Permalink to this heading"></a></h3>
+<p>对于推理链、带反馈的编程、游戏和工具使用等多步交互，请实现多轮智能体，通过 <code class="docutils literal notranslate"><span class="pre">--train.agent_func_path</span></code> 传入。每个样本成为一个 <em>episode（完整交互回合）</em>：</p>
+<ol class="arabic simple">
+<li><p>使用初始提示词和标签<strong>重置</strong>环境。</p></li>
+<li><p>模型生成一个动作。</p></li>
+<li><p>环境返回反馈、可选奖励以及 <code class="docutils literal notranslate"><span class="pre">done</span></code>。</p></li>
+<li><p>重复，直到 <code class="docutils literal notranslate"><span class="pre">done=True</span></code>。</p></li>
+</ol>
+<p>OpenRLHF 将这些内容封装为同一 token-in-token-out（词元输入/词元输出）轨迹供损失层使用，因此任何 RL 算法都能直接运行。</p>
+<p><strong>实现智能体。</strong>继承 <code class="docutils literal notranslate"><span class="pre">AgentInstanceBase</span></code>，并可选地将其封装到 <code class="docutils literal notranslate"><span class="pre">MultiTurnAgentExecutor</span></code>：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># agent_func.py</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">openrlhf.utils.agent</span><span class="w"> </span><span class="kn">import</span> <span class="n">AgentInstanceBase</span><span class="p">,</span> <span class="n">MultiTurnAgentExecutor</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">AgentInstance</span><span class="p">(</span><span class="n">AgentInstanceBase</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">step_idx</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">reset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">states</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+        <span class="c1"># states: {&quot;observation&quot;: &lt;prompt&gt;, &quot;label&quot;: &lt;ground truth&gt;, ...}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">step_idx</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;observation&quot;</span><span class="p">:</span> <span class="n">states</span><span class="p">[</span><span class="s2">&quot;observation&quot;</span><span class="p">]}</span>
+
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">states</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+        <span class="c1"># states: observation_text / action_text / label / sampling_params / ...</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">step_idx</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="n">done</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">step_idx</span> <span class="o">&gt;=</span> <span class="mi">3</span>
+        <span class="n">reward</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span> <span class="k">if</span> <span class="n">done</span> <span class="k">else</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">0.0</span><span class="p">)</span>
+
+        <span class="n">feedback</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">Human: [CORRECT]</span><span class="se">\n</span><span class="s2">&lt;/s&gt;&quot;</span>
+            <span class="k">if</span> <span class="n">done</span>
+            <span class="k">else</span> <span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">Human: [INCORRECT]</span><span class="se">\n</span><span class="s2">Please analyze and try again.</span><span class="se">\n</span><span class="s2">&lt;/s&gt;</span><span class="se">\n\n</span><span class="s2">Assistant: &quot;</span>
+        <span class="p">)</span>
+
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;rewards&quot;</span><span class="p">:</span> <span class="n">reward</span><span class="p">,</span>                 <span class="c1"># used for advantage</span>
+            <span class="s2">&quot;scores&quot;</span><span class="p">:</span> <span class="n">reward</span><span class="p">,</span>                  <span class="c1"># used for dynamic filtering</span>
+            <span class="s2">&quot;environment_feedback&quot;</span><span class="p">:</span> <span class="n">feedback</span><span class="p">,</span>  <span class="c1"># appended to next-turn context</span>
+            <span class="s2">&quot;done&quot;</span><span class="p">:</span> <span class="n">done</span><span class="p">,</span>
+            <span class="s2">&quot;sampling_params&quot;</span><span class="p">:</span> <span class="n">states</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;sampling_params&quot;</span><span class="p">),</span>
+            <span class="s2">&quot;extra_logs&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;step&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">step_idx</span><span class="p">},</span>
+        <span class="p">}</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">AgentExecutor</span><span class="p">(</span><span class="n">MultiTurnAgentExecutor</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">AgentInstance</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>返回值约定：</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">reset(states)</span></code> → <code class="docutils literal notranslate"><span class="pre">{&quot;observation&quot;:</span> <span class="pre">str}</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">step(states)</span></code> → 字典，包含 <code class="docutils literal notranslate"><span class="pre">rewards</span></code>（Tensor，张量）、<code class="docutils literal notranslate"><span class="pre">scores</span></code>（Tensor）、<code class="docutils literal notranslate"><span class="pre">environment_feedback</span></code>（str）、<code class="docutils literal notranslate"><span class="pre">done</span></code>（bool）。可选项：<code class="docutils literal notranslate"><span class="pre">sampling_params</span></code>（每步的 vLLM 参数）、<code class="docutils literal notranslate"><span class="pre">environment_images</span></code>（用于 VLM（视觉语言模型）智能体）、<code class="docutils literal notranslate"><span class="pre">extra_logs</span></code>（指标字典）。</p></li>
+</ul>
+<p>要完整自定义 token 级控制，直接继承 <code class="docutils literal notranslate"><span class="pre">AgentExecutorBase</span></code> 并实现 <code class="docutils literal notranslate"><span class="pre">execute()</span></code>，但请遵循 <strong>token-in-token-out 原则</strong>，保持采样与训练一致。</p>
+<p><strong>启动：</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python3<span class="w"> </span>-m<span class="w"> </span>openrlhf.cli.train_ppo_ray<span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>--actor.model_name_or_path<span class="w"> </span>Qwen/Qwen3-4B-Thinking-2507<span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>--train.agent_func_path<span class="w"> </span>/path/to/agent_func.py<span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>...
+</pre></div>
+</div>
+<p>要提高吞吐量，可添加 <code class="docutils literal notranslate"><span class="pre">--train.async_enable</span></code>，也可选添加 <code class="docutils literal notranslate"><span class="pre">--train.partial_rollout_enable</span></code>；见 <a class="reference internal" href="async_training.html"><span class="doc">异步训练与 Partial Rollout（可中断并恢复的部分采样生成）</span></a>。</p>
+<p><strong>兼容 OpenAI（人工智能服务平台）的 Agent Server（智能体服务器）。</strong>智能体需要 OpenAI 风格聊天 API（应用编程接口） 时（如接入已有工具使用框架），<a class="reference external" href="https://github.com/OpenRLHF/OpenRLHF/blob/main/examples/python/agent_func_openai_server_executor.py">examples/python/agent_func_openai_server_executor.py</a> 将本地 vLLM 封装为 <code class="docutils literal notranslate"><span class="pre">/v1/chat/completions</span></code> 服务器，同时仍采集 token 级追踪用于 RL 训练：</p>
+<ul class="simple">
+<li><p>标准端点：<code class="docutils literal notranslate"><span class="pre">/v1/chat/completions</span></code>、<code class="docutils literal notranslate"><span class="pre">/v1/models</span></code>、<code class="docutils literal notranslate"><span class="pre">/tokenize</span></code>。</p></li>
+<li><p>自动采集每个会话的 token ID 和对数概率。</p></li>
+<li><p>Delta-tokenization（增量分词）在多轮调用间复用前缀 token。</p></li>
+<li><p>覆盖 <code class="docutils literal notranslate"><span class="pre">run_agent()</span></code>，接入自己的多轮工作流。</p></li>
+</ul>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python3<span class="w"> </span>-m<span class="w"> </span>openrlhf.cli.train_ppo_ray<span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>--train.agent_func_path<span class="w"> </span>examples/python/agent_func_openai_server_executor.py<span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>...
+</pre></div>
+</div>
+</section>
+</section>
+<section id="rl-algorithms">
+<h2><a class="toc-backref" href="#id10" role="doc-backlink">RL Algorithms</a><a class="headerlink" href="#rl-algorithms" title="Permalink to this heading"></a></h2>
+<p>算法决定<strong>如何根据采集的轨迹更新策略</strong>，通过 <code class="docutils literal notranslate"><span class="pre">--algo.advantage.estimator</span></code> 选择。算法的差异包括是否使用 critic（价值模型）、如何设置奖励基线，以及如何归一化优势值。<strong>所有算法均适用于每种执行模式和流水线。</strong></p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 22%" />
+<col style="width: 22%" />
+<col style="width: 28%" />
+<col style="width: 28%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>算法</p></th>
+<th class="head"><p><code class="docutils literal notranslate"><span class="pre">--algo.advantage.estimator</span></code></p></th>
+<th class="head"><p>核心思想</p></th>
+<th class="head"><p>最适合</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><strong>PPO</strong></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">gae</span></code> <em>（默认）</em></p></td>
+<td><p>使用完整 critic 的 GAE（广义优势估计）；裁剪代理目标</p></td>
+<td><p>通用 RLHF，稳定训练</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>REINFORCE++</strong></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">reinforce</span></code></p></td>
+<td><p>无需 critic；PPO 裁剪、KL（Kullback–Leibler 散度）惩罚和奖励归一化</p></td>
+<td><p>内存占用低于 PPO</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>REINFORCE++-baseline</strong></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">reinforce_baseline</span></code></p></td>
+<td><p>以平均奖励为基线（无 critic，不进行逐提示词标准差归一化）</p></td>
+<td><p><strong>RLVR/推理</strong> — 对奖励尺度稳健</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>RLOO</strong></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">rloo</span></code></p></td>
+<td><p>留一法基线 + PPO 裁剪 + 逐 token KL</p></td>
+<td><p>每个提示词生成多个样本的训练</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>GRPO</strong></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">group_norm</span></code></p></td>
+<td><p>按组均值/标准差归一化 + KL 损失项</p></td>
+<td><p>基于批次的推理训练</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Dr. GRPO</strong></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">dr_grpo</span></code></p></td>
+<td><p>不进行局部 <code class="docutils literal notranslate"><span class="pre">/std</span></code> 归一化的 GRPO</p></td>
+<td><p>逐组标准差归一化影响效果时</p></td>
+</tr>
+</tbody>
+</table>
+<p>算法专属要求：</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">rloo</span></code> / <code class="docutils literal notranslate"><span class="pre">reinforce_baseline</span></code> / <code class="docutils literal notranslate"><span class="pre">group_norm</span></code> 需要 <code class="docutils literal notranslate"><span class="pre">--rollout.n_samples_per_prompt</span> <span class="pre">&gt;</span> <span class="pre">1</span></code>。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">group_norm</span></code>（GRPO）通常搭配 <code class="docutils literal notranslate"><span class="pre">--algo.kl.use_loss</span></code> 和 <code class="docutils literal notranslate"><span class="pre">--algo.kl.estimator</span> <span class="pre">k3</span></code>。</p></li>
+</ul>
+</section>
+<section id="optimizer-adam-or-muon-per-entity">
+<h2><a class="toc-backref" href="#id11" role="doc-backlink">Optimizer: Adam or Muon (per entity)</a><a class="headerlink" href="#optimizer-adam-or-muon-per-entity" title="Permalink to this heading"></a></h2>
+<p>PPO 有两个独立优化的模型：actor（策略模型）和 critic。0.10.2 支持按实体选择优化器：</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 35%" />
+<col style="width: 65%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>标志</p></th>
+<th class="head"><p>含义</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--actor.optim</span> <span class="pre">{adam,</span> <span class="pre">muon}</span></code></p></td>
+<td><p>Actor 优化器（默认 <code class="docutils literal notranslate"><span class="pre">adam</span></code>）。</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--critic.optim</span> <span class="pre">{adam,</span> <span class="pre">muon}</span></code></p></td>
+<td><p>Critic 优化器（默认 <code class="docutils literal notranslate"><span class="pre">adam</span></code>）。</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--actor.muon.lr</span></code> / <code class="docutils literal notranslate"><span class="pre">--actor.muon.momentum</span></code></p></td>
+<td><p>actor 的 Muon（矩阵权重优化器）二维权重组设置。</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--actor.adam.lr</span></code></p></td>
+<td><p>当 <code class="docutils literal notranslate"><span class="pre">--actor.optim</span> <span class="pre">adam</span></code> 时的 Adam（自适应矩估计优化器）LR（学习率）；当 <code class="docutils literal notranslate"><span class="pre">--actor.optim</span> <span class="pre">muon</span></code> 时，也用于 Muon 辅助 Adam 子组（嵌入/LM head（语言模型输出头）/一维参数）。</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--actor.adam.betas</span></code> / <code class="docutils literal notranslate"><span class="pre">--actor.adam.eps</span></code> / <code class="docutils literal notranslate"><span class="pre">--actor.adam.weight_decay</span></code></p></td>
+<td><p>actor 的 AdamW（带解耦权重衰减的 Adam）超参数。</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--actor.lr_scheduler</span></code> / <code class="docutils literal notranslate"><span class="pre">--actor.lr_warmup_ratio</span></code> / <code class="docutils literal notranslate"><span class="pre">--actor.min_lr_ratio</span></code> /
+<code class="docutils literal notranslate"><span class="pre">--actor.max_norm</span></code></p></td>
+<td><p>各实体独立的调度器和梯度裁剪。critic 端将 <code class="docutils literal notranslate"><span class="pre">actor</span></code> 替换为 <code class="docutils literal notranslate"><span class="pre">critic</span></code>；二者完全独立。</p></td>
+</tr>
+</tbody>
+</table>
+<p>典型的“actor-Muon、critic-Adam”组合（0.10.2 中可用一行设置）：</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>--actor.optim<span class="w"> </span>muon<span class="w"> </span><span class="se">\</span>
+--actor.muon.lr<span class="w"> </span><span class="m">0</span>.02<span class="w"> </span>--actor.muon.momentum<span class="w"> </span><span class="m">0</span>.95<span class="w"> </span><span class="se">\</span>
+--actor.adam.lr<span class="w"> </span>5e-7<span class="w"> </span><span class="se">\</span>
+--critic.optim<span class="w"> </span>adam<span class="w"> </span><span class="se">\</span>
+--critic.adam.lr<span class="w"> </span>9e-6
+</pre></div>
+</div>
+<p>Muon 需要 DeepSpeed（分布式训练优化框架）≥ 0.18.2，且<strong>不兼容</strong> <code class="docutils literal notranslate"><span class="pre">--ds.adam_offload</span></code>。详细注意事项见 <a class="reference internal" href="common_options.html"><span class="doc">常用 CLI（命令行接口）选项</span></a>（<code class="docutils literal notranslate"><span class="pre">ns_steps</span></code> / Nesterov（前瞻动量）占位设置、权重衰减语义）。</p>
+</section>
+<section id="tuning">
+<h2><a class="toc-backref" href="#id12" role="doc-backlink">Tuning</a><a class="headerlink" href="#tuning" title="Permalink to this heading"></a></h2>
+<p>以下标志是围绕所选算法的调优参数。实际使用中，多数用户主要调整 KL 控制和长度惩罚参数。</p>
+<section id="loss-clipping">
+<h3><a class="toc-backref" href="#id13" role="doc-backlink">Loss &amp; clipping</a><a class="headerlink" href="#loss-clipping" title="Permalink to this heading"></a></h3>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 35%" />
+<col style="width: 65%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>标志</p></th>
+<th class="head"><p>含义</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--actor.eps_clip</span></code></p></td>
+<td><p>PPO 裁剪范围（默认 <code class="docutils literal notranslate"><span class="pre">0.2</span></code>）。</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--actor.eps_clip_low_high</span> <span class="pre">&lt;low&gt;</span> <span class="pre">&lt;high&gt;</span></code></p></td>
+<td><p>非对称裁剪边界；设置后覆盖 <code class="docutils literal notranslate"><span class="pre">--actor.eps_clip</span></code>。</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--actor.dual_clip</span> <span class="pre">&lt;c&gt;</span></code></p></td>
+<td><p>Dual-clip PPO（双重裁剪 PPO）上界（典型值 <code class="docutils literal notranslate"><span class="pre">c=3</span></code>）；防止负优势值上的策略更新过大。</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--critic.value_clip</span></code></p></td>
+<td><p>Critic 价值裁剪（默认 <code class="docutils literal notranslate"><span class="pre">0.5</span></code>）。</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--actor.policy_loss_type</span> <span class="pre">{ppo,</span> <span class="pre">gspo}</span></code></p></td>
+<td><p>切换标准 PPO 与 GSPO（组序列策略优化）风格的损失聚合。</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="advantage-gae">
+<h3><a class="toc-backref" href="#id14" role="doc-backlink">Advantage / GAE</a><a class="headerlink" href="#advantage-gae" title="Permalink to this heading"></a></h3>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 35%" />
+<col style="width: 65%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>标志</p></th>
+<th class="head"><p>含义</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--algo.advantage.gamma</span></code></p></td>
+<td><p>折扣因子（默认 <code class="docutils literal notranslate"><span class="pre">1.0</span></code>，将轨迹视为一个完整 episode，不进行折扣）。</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--algo.advantage.lambd</span></code></p></td>
+<td><p>GAE 的 λ（默认 <code class="docutils literal notranslate"><span class="pre">1.0</span></code>）；降低 λ，以增加偏差换取降低方差。</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--algo.advantage.no_std_norm</span></code></p></td>
+<td><p>保留均值中心化，但不再除以优势值标准差。</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="kl-control">
+<h3><a class="toc-backref" href="#id15" role="doc-backlink">KL control</a><a class="headerlink" href="#kl-control" title="Permalink to this heading"></a></h3>
+<p>当前策略与参考策略之间的 KL 散度，可以作为<strong>奖励惩罚</strong>，也可以作为<strong>独立损失项</strong>：</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 35%" />
+<col style="width: 65%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>标志</p></th>
+<th class="head"><p>含义</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--algo.kl.init_coef</span></code></p></td>
+<td><p>初始 KL 系数（默认 <code class="docutils literal notranslate"><span class="pre">0.01</span></code>）。设为 <code class="docutils literal notranslate"><span class="pre">0</span></code> 可完全禁用参考模型。</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--algo.kl.target</span></code> / <code class="docutils literal notranslate"><span class="pre">--algo.kl.horizon</span></code></p></td>
+<td><p>自适应 KL 控制器：设置 <code class="docutils literal notranslate"><span class="pre">--algo.kl.target</span></code> 后，系数会在 <code class="docutils literal notranslate"><span class="pre">--algo.kl.horizon</span></code> 步内向该目标自适应调整。</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--algo.kl.use_loss</span></code></p></td>
+<td><p>将 KL 加为独立损失项（GRPO 风格），而非奖励惩罚。</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--algo.kl.estimator</span> <span class="pre">{k1,</span> <span class="pre">k2,</span> <span class="pre">k3}</span></code></p></td>
+<td><p>KL 估计器：<code class="docutils literal notranslate"><span class="pre">k1</span></code> 用于标准 PPO 惩罚；作为损失时 <code class="docutils literal notranslate"><span class="pre">k2</span></code> ≈ <code class="docutils literal notranslate"><span class="pre">k1</span></code>；<code class="docutils literal notranslate"><span class="pre">k3</span></code> 用于 GRPO 损失。</p></td>
+</tr>
+</tbody>
+</table>
+<p>推荐搭配（搭配不同时，训练器会警告）：</p>
+<ul class="simple">
+<li><p><strong>KL 作为奖励惩罚</strong>（无 <code class="docutils literal notranslate"><span class="pre">--algo.kl.use_loss</span></code>）：<code class="docutils literal notranslate"><span class="pre">--algo.kl.estimator</span> <span class="pre">k1</span></code> 是唯一合理选择。典型配置：标准 PPO 或 REINFORCE++ 使用 <code class="docutils literal notranslate"><span class="pre">--algo.kl.init_coef</span> <span class="pre">0.01</span> <span class="pre">--algo.kl.estimator</span> <span class="pre">k1</span></code>。</p></li>
+<li><p><strong>KL 作为损失项</strong>（<code class="docutils literal notranslate"><span class="pre">--algo.kl.use_loss</span></code>）：使用 <code class="docutils literal notranslate"><span class="pre">--algo.kl.estimator</span> <span class="pre">k2</span></code> 或 <code class="docutils literal notranslate"><span class="pre">k3</span></code>（k1 不是有效损失）。典型配置：GRPO 使用 <code class="docutils literal notranslate"><span class="pre">--algo.kl.use_loss</span> <span class="pre">--algo.kl.estimator</span> <span class="pre">k3</span></code>；<a class="reference internal" href="hybrid_engine.html"><span class="doc">Hybrid Engine（混合引擎）</span></a> 中默认 RLVR 实践方案使用 <code class="docutils literal notranslate"><span class="pre">--algo.kl.use_loss</span> <span class="pre">--algo.kl.estimator</span> <span class="pre">k2</span> <span class="pre">--algo.kl.init_coef</span> <span class="pre">1e-5</span></code>，搭配 REINFORCE++-baseline。</p></li>
+</ul>
+</section>
+<section id="entropy">
+<h3><a class="toc-backref" href="#id16" role="doc-backlink">Entropy</a><a class="headerlink" href="#entropy" title="Permalink to this heading"></a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">--actor.entropy_coef</span></code>：熵正则化系数。<code class="docutils literal notranslate"><span class="pre">None</span></code> 禁用；<code class="docutils literal notranslate"><span class="pre">0</span></code> 仅记录熵，不将其作为损失。</p></li>
+</ul>
+</section>
+<section id="reward-shaping">
+<h3><a class="toc-backref" href="#id17" role="doc-backlink">Reward shaping</a><a class="headerlink" href="#reward-shaping" title="Permalink to this heading"></a></h3>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 38%" />
+<col style="width: 62%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>标志</p></th>
+<th class="head"><p>含义</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--reward.normalize_enable</span></code></p></td>
+<td><p>使用在线滚动均值/标准差归一化原始奖励。</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--reward.clip_range</span> <span class="pre">&lt;low&gt;</span> <span class="pre">&lt;high&gt;</span></code></p></td>
+<td><p>优势计算前，对原始奖励进行截限（默认 <code class="docutils literal notranslate"><span class="pre">-10</span> <span class="pre">10</span></code>）。</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--reward.overlong_buffer_len</span> <span class="pre">&lt;L&gt;</span></code></p></td>
+<td><p>DAPO（解耦裁剪与动态采样策略优化）风格的软长度限制：惩罚长度超过 <code class="docutils literal notranslate"><span class="pre">max_new_tokens</span> <span class="pre">-</span> <span class="pre">L</span></code> 的回复。</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--reward.overlong_penalty_factor</span></code></p></td>
+<td><p>超长惩罚的乘法幅度（默认 <code class="docutils literal notranslate"><span class="pre">1.0</span></code>）。</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--reward.stop_properly_penalty_coef</span> <span class="pre">&lt;c&gt;</span></code></p></td>
+<td><p>对满足 <code class="docutils literal notranslate"><span class="pre">finish_reason='length'</span></code> 的样本使用 ProRL（强化学习训练方案）风格的截断惩罚。<code class="docutils literal notranslate"><span class="pre">c</span> <span class="pre">&gt;=</span> <span class="pre">0</span></code> 时将奖励乘以 <code class="docutils literal notranslate"><span class="pre">c</span> <span class="pre">∈</span> <span class="pre">[0,</span> <span class="pre">1]</span></code>；<code class="docutils literal notranslate"><span class="pre">c</span> <span class="pre">&lt;</span> <span class="pre">0</span></code> 时覆盖奖励（如 <code class="docutils literal notranslate"><span class="pre">-0.5</span></code>）。</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="off-policy-correction-tis-icepop-seq-mask-tis">
+<h3><a class="toc-backref" href="#id18" role="doc-backlink">Off-policy correction (TIS / ICEPOP / Seq-Mask-TIS)</a><a class="headerlink" href="#off-policy-correction-tis-icepop-seq-mask-tis" title="Permalink to this heading"></a></h3>
+<p>vLLM 使用与训练器不同的内核，有时精度也不同，因此相同 token 序列在 rollout 与训练中可能产生略有差异的对数概率。OpenRLHF 可以通过 <strong>importance-sampling correction（重要性采样修正，IS）</strong>补偿。</p>
+<p>通过 <code class="docutils literal notranslate"><span class="pre">--algo.advantage.is_correction_enable</span></code> 启用，并选择策略：</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 35%" />
+<col style="width: 40%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>策略</p></th>
+<th class="head"><p>标志</p></th>
+<th class="head"><p>行为</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><strong>TIS（截断重要性采样）</strong> <em>（默认）</em></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--algo.advantage.is_correction_type</span> <span class="pre">tis</span></code></p></td>
+<td><p>在 token 级将 IS 比率<strong>截限</strong>到 <code class="docutils literal notranslate"><span class="pre">[low,</span> <span class="pre">high]</span></code>。</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>ICEPOP（区间外系数置零的采样修正）</strong></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--algo.advantage.is_correction_type</span> <span class="pre">icepop</span></code></p></td>
+<td><p>Token 级<strong>过滤</strong>：将 <code class="docutils literal notranslate"><span class="pre">[low,</span> <span class="pre">high]</span></code> 之外的系数置零，不进行截限。</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Seq-Mask-TIS（序列掩码截断重要性采样）</strong></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--algo.advantage.is_correction_type</span> <span class="pre">seq-mask-tis</span></code></p></td>
+<td><p>序列级几何平均掩码。</p></td>
+</tr>
+</tbody>
+</table>
+<p>阈值：<code class="docutils literal notranslate"><span class="pre">--algo.advantage.is_correction_threshold</span> <span class="pre">&lt;low&gt;</span> <span class="pre">&lt;high&gt;</span></code>（默认 <code class="docutils literal notranslate"><span class="pre">0.5</span> <span class="pre">5.0</span></code>）。背景：<a class="reference external" href="https://fengyao.notion.site/off-policy-rl">off-policy RL training</a>。</p>
+<p>ICEPOP 等价于硬掩码：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># ICEPOP: zero-out coefficients outside the interval</span>
+<span class="n">vllm_is</span> <span class="o">=</span> <span class="n">exp</span><span class="p">(</span><span class="n">old_log_probs</span> <span class="o">-</span> <span class="n">rollout_log_probs</span><span class="p">)</span>
+<span class="n">mask</span> <span class="o">=</span> <span class="p">(</span><span class="n">vllm_is</span> <span class="o">&gt;=</span> <span class="n">low</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">vllm_is</span> <span class="o">&lt;=</span> <span class="n">high</span><span class="p">)</span>
+<span class="n">vllm_is</span> <span class="o">=</span> <span class="n">vllm_is</span> <span class="o">*</span> <span class="n">mask</span>
+</pre></div>
+</div>
+<div class="admonition tip">
+<p class="admonition-title">提示</p>
+<p>异步加 partial rollout 与 ICEPOP 自然适配，因为在途样本会混用旧、新权重。见 <a class="reference internal" href="async_training.html"><span class="doc">异步训练与 Partial Rollout（可中断并恢复的部分采样生成）</span></a>。</p>
+</div>
+</section>
+<section id="dynamic-sampling-dapo">
+<h3><a class="toc-backref" href="#id19" role="doc-backlink">Dynamic sampling (DAPO)</a><a class="headerlink" href="#dynamic-sampling-dapo" title="Permalink to this heading"></a></h3>
+<p>推理任务中，为<strong>每个提示词生成多个回复</strong>，仅使用其中一部分训练：</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 38%" />
+<col style="width: 62%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>标志</p></th>
+<th class="head"><p>含义</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--rollout.n_samples_per_prompt</span></code></p></td>
+<td><p>每个提示词的回复数量（过滤/RLOO/GRPO/REINFORCE++-baseline 时必须 &gt; 1）。</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--algo.dynamic_filtering_enable</span></code></p></td>
+<td><p>使用奖励/智能体函数返回的 <code class="docutils literal notranslate"><span class="pre">scores</span></code>，启用 DAPO 风格过滤。</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--algo.dynamic_filtering_range</span> <span class="pre">&lt;low&gt;</span> <span class="pre">&lt;high&gt;</span></code></p></td>
+<td><p>保留的奖励范围，例如 <code class="docutils literal notranslate"><span class="pre">0.0</span> <span class="pre">1.0</span></code>。丢弃范围外样本。</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--rollout.vllm_generate_batch_size</span></code></p></td>
+<td><p>vLLM 生成批次大小；可超过 <code class="docutils literal notranslate"><span class="pre">--rollout.batch_size</span></code> 以进行过采样。需要 <code class="docutils literal notranslate"><span class="pre">--train.async_enable</span></code>，在大于 <code class="docutils literal notranslate"><span class="pre">--rollout.batch_size</span></code> 时。</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--train.dynamic_batch_enable</span></code></p></td>
+<td><p>按 token 预算而非样本数量组成微批次，对变长序列能实现更好的打包。搭配 <code class="docutils literal notranslate"><span class="pre">--train.max_tokens_per_gpu</span></code> 和 <code class="docutils literal notranslate"><span class="pre">--rollout.max_tokens_per_gpu</span></code>。</p></td>
+</tr>
+</tbody>
+</table>
+<p>经验性大小规则：<code class="docutils literal notranslate"><span class="pre">train.batch_size</span> <span class="pre">=</span> <span class="pre">rollout.batch_size</span> <span class="pre">*</span> <span class="pre">rollout.n_samples_per_prompt</span></code>。启用 <code class="docutils literal notranslate"><span class="pre">--algo.dynamic_filtering_enable</span></code> 时，如果大量样本被过滤，有效批次可能缩小；通过 <code class="docutils literal notranslate"><span class="pre">--rollout.vllm_generate_batch_size</span></code> 保留过采样余量（仅异步）。</p>
+<p>端到端 DAPO 实践方案：<a class="reference external" href="https://github.com/OpenRLHF/OpenRLHF/blob/main/examples/scripts/train_dapo_ray_hybrid_engine.sh">train_dapo_ray_hybrid_engine.sh</a>。</p>
+</section>
+<section id="sampling-misc">
+<h3><a class="toc-backref" href="#id20" role="doc-backlink">Sampling &amp; misc</a><a class="headerlink" href="#sampling-misc" title="Permalink to this heading"></a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">--rollout.top_p</span></code> / <code class="docutils literal notranslate"><span class="pre">--rollout.temperature</span></code>：rollout 期间的 vLLM 采样参数。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--critic.freezing_steps</span></code>：critic 预热时，在前 <em>N</em> 次更新中冻结 actor。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--critic.save_value_network</span></code>：同时保存 critic 检查点（仅 PPO）。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--train.full_determinism_enable</span></code>：逐位可复现的行为（更慢；vLLM v1 与固定种子路径）。</p></li>
+</ul>
+</section>
+</section>
+<section id="vision-language-model-vlm-rlhf">
+<h2><a class="toc-backref" href="#id21" role="doc-backlink">Vision-Language Model (VLM) RLHF</a><a class="headerlink" href="#vision-language-model-vlm-rlhf" title="Permalink to this heading"></a></h2>
+<p>自 OpenRLHF 0.10 起，VLM（如 <strong>Qwen3.5</strong>）可以使用图像输入进行端到端训练。框架通过 HuggingFace（模型与工具平台）配置中的 <code class="docutils literal notranslate"><span class="pre">vision_config</span></code> 字段自动识别 VLM，使用 <code class="docutils literal notranslate"><span class="pre">AutoModelForImageTextToText</span></code> 加载，通过 <code class="docutils literal notranslate"><span class="pre">AutoProcessor</span></code> 正确插入图像 token，再将图像传给 vLLM，进行多模态生成。</p>
+<p>其意义在于：以往 VLM RLHF 配置需要自定义数据加载器和专用推理路径。OpenRLHF 对 VLM 复用与纯文本模型<strong>相同的智能体执行流水线</strong>、<strong>相同的 RL 算法</strong>及<strong>相同的 Hybrid Engine</strong>，只需添加少量标志。</p>
+<p>VLM 专属标志：</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 38%" />
+<col style="width: 62%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>标志</p></th>
+<th class="head"><p>含义</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--data.image_key</span></code></p></td>
+<td><p>数据集 JSON 中保存图像路径/URL 的键（默认 <code class="docutils literal notranslate"><span class="pre">images</span></code>）。</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--data.max_images_per_prompt</span></code></p></td>
+<td><p>每个提示词允许 vLLM 使用的最大图像数量（<code class="docutils literal notranslate"><span class="pre">0</span></code> = 纯文本；默认 <code class="docutils literal notranslate"><span class="pre">0</span></code>）。</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--actor.freeze_visual_encoder</span></code></p></td>
+<td><p>冻结视觉编码器，只训练语言模型权重并将其同步到 vLLM，节省显存和权重同步时间。</p></td>
+</tr>
+</tbody>
+</table>
+<p>数据集格式（JSONL（每行一个 JSON 对象的格式））：</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;prompt&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">        </span><span class="p">{</span><span class="nt">&quot;role&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;user&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;content&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">            </span><span class="p">{</span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;image&quot;</span><span class="p">},</span>
+<span class="w">            </span><span class="p">{</span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;text&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;text&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Find x.&quot;</span><span class="p">}</span>
+<span class="w">        </span><span class="p">]}</span>
+<span class="w">    </span><span class="p">],</span>
+<span class="w">    </span><span class="nt">&quot;images&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;/path/to/image.png&quot;</span><span class="p">],</span>
+<span class="w">    </span><span class="nt">&quot;label&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;3&quot;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>端到端示例，见 <a class="reference external" href="https://github.com/OpenRLHF/OpenRLHF/blob/main/examples/scripts/train_vlm_math_hybrid_engine.sh">train_vlm_math_hybrid_engine.sh</a>：</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python3<span class="w"> </span>-m<span class="w"> </span>openrlhf.cli.train_ppo_ray<span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>--actor.model_name_or_path<span class="w"> </span>Qwen/Qwen3.5-2B<span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>--reward.remote_url<span class="w"> </span>examples/python/math_reward_func.py<span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>--data.prompt_dataset<span class="w"> </span>hiyouga/geometry3k<span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>--data.input_key<span class="w"> </span>prompt<span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>--data.label_key<span class="w"> </span>label<span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>--data.image_key<span class="w"> </span>images<span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>--data.max_images_per_prompt<span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>--actor.freeze_visual_encoder<span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>--data.max_len<span class="w"> </span><span class="m">4096</span><span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>--rollout.max_new_tokens<span class="w"> </span><span class="m">2048</span><span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>--algo.advantage.estimator<span class="w"> </span>reinforce_baseline<span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>--train.colocate_all<span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>--vllm.gpu_memory_utilization<span class="w"> </span><span class="m">0</span>.7<span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>--data.apply_chat_template<span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>--ds.attn_implementation<span class="w"> </span>eager<span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>--ds.param_dtype<span class="w"> </span>bf16<span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>...
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">说明</p>
+<ul class="simple">
+<li><p><strong>已测试</strong>：Qwen3.5（混合线性注意力与完整注意力）。</p></li>
+<li><p><strong>自动识别，尚未测试</strong>：采用 <code class="docutils literal notranslate"><span class="pre">ForConditionalGeneration</span></code> 架构的 VLM（Gemma4、LLaVA、InternVL 等）。</p></li>
+<li><p>对包含线性注意力层的模型使用 <code class="docutils literal notranslate"><span class="pre">--ds.attn_implementation</span> <span class="pre">eager</span></code>；flash attention（高效注意力计算实现）可能不支持这些层的打包序列。</p></li>
+<li><p>VLM 训练<strong>不</strong>支持 <code class="docutils literal notranslate"><span class="pre">--ds.packing_samples</span></code>（打包会合并批次维度，破坏图像与 token 对齐），也不支持 PPO critic（请使用无需 critic 的 <code class="docutils literal notranslate"><span class="pre">--algo.advantage.estimator</span></code>，例如 <code class="docutils literal notranslate"><span class="pre">reinforce_baseline</span></code> / <code class="docutils literal notranslate"><span class="pre">rloo</span></code> / <code class="docutils literal notranslate"><span class="pre">group_norm</span></code>）。</p></li>
+<li><p>支持多轮 VLM RLHF，见 <a class="reference external" href="https://github.com/OpenRLHF/OpenRLHF/blob/main/examples/python/vlm_multiturn_agent.py">vlm_multiturn_agent.py</a>。</p></li>
+</ul>
+</div>
+</section>
+<section id="logging-evaluation">
+<h2><a class="toc-backref" href="#id22" role="doc-backlink">Logging &amp; evaluation</a><a class="headerlink" href="#logging-evaluation" title="Permalink to this heading"></a></h2>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">--logger.wandb.key</span> <span class="pre">{token}</span></code> / <code class="docutils literal notranslate"><span class="pre">--logger.wandb.project</span></code> / <code class="docutils literal notranslate"><span class="pre">--logger.wandb.group</span></code> / <code class="docutils literal notranslate"><span class="pre">--logger.wandb.run_name</span></code>：Wandb（实验跟踪工具）日志。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--logger.tensorboard_dir</span> <span class="pre">{logdir}</span></code>：TensorBoard（训练可视化工具）日志。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--logger.logging_steps</span></code>：每 <em>N</em> 个训练步骤记录一次日志。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--eval.steps</span></code> / <code class="docutils literal notranslate"><span class="pre">--eval.dataset</span></code>：在留出数据集上定期评估。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--train.num_episodes</span></code>：运行的 RL episode 总数（一个 episode = 对 <code class="docutils literal notranslate"><span class="pre">rollout.batch_size</span></code> 个提示词完整执行一轮 rollout）。</p></li>
+</ul>
+<p>训练指标包括策略损失、KL、熵、奖励/优势统计、生成长度、梯度范数以及各阶段实际耗时。保存与恢复机制见 <a class="reference internal" href="checkpoint.html"><span class="doc">Checkpoint（检查点）保存与恢复</span></a>，调优见 <a class="reference internal" href="performance.html"><span class="doc">性能调优</span></a>。</p>
+</section>
+<section id="reference-scripts">
+<h2><a class="toc-backref" href="#id23" role="doc-backlink">Reference scripts</a><a class="headerlink" href="#reference-scripts" title="Permalink to this heading"></a></h2>
+<ul class="simple">
+<li><p>REINFORCE++-baseline + Hybrid Engine — <a class="reference external" href="https://github.com/OpenRLHF/OpenRLHF/blob/main/examples/scripts/train_reinforce_baseline_hybrid_engine.sh">train_reinforce_baseline_hybrid_engine.sh</a></p></li>
+<li><p>异步智能体 RLHF + Partial Rollout — <a class="reference external" href="https://github.com/OpenRLHF/OpenRLHF/blob/main/examples/scripts/train_reinforce_baseline_ray_agent_async.sh">train_reinforce_baseline_ray_agent_async.sh</a></p></li>
+<li><p>使用动态过滤的 DAPO — <a class="reference external" href="https://github.com/OpenRLHF/OpenRLHF/blob/main/examples/scripts/train_dapo_ray_hybrid_engine.sh">train_dapo_ray_hybrid_engine.sh</a></p></li>
+<li><p>ProRL V2（1.5B 推理）— <a class="reference external" href="https://github.com/OpenRLHF/OpenRLHF/blob/main/examples/scripts/train_prorlv2_math_hybrid_engine.sh">train_prorlv2_math_hybrid_engine.sh</a></p></li>
+<li><p>自定义 Python 奖励（RFT）— <a class="reference external" href="https://github.com/OpenRLHF/OpenRLHF/blob/main/examples/scripts/train_ppo_with_reward_fn.sh">train_ppo_with_reward_fn.sh</a></p></li>
+<li><p>VLM 数学 RLHF — <a class="reference external" href="https://github.com/OpenRLHF/OpenRLHF/blob/main/examples/scripts/train_vlm_math_hybrid_engine.sh">train_vlm_math_hybrid_engine.sh</a></p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="agent_paradigm.html" class="btn btn-neutral float-left" title="Design Paradigm: Agent-Based Execution" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="non_rl.html" class="btn btn-neutral float-right" title="Supervised &amp; Preference Training (SFT / RM / DPO)" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, OpenRLHF.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="zh-CN" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>性能调优 &mdash; OpenRLHF 0.10.2 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js?v=69c39844"></script>
+        <script src="_static/doctools.js?v=888ff710"></script>
+        <script src="_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Checkpointing" href="checkpoint.html" />
+    <link rel="prev" title="Async Training &amp; Partial Rollout" href="async_training.html" /> 
+<script async type="text/javascript" src="/openrlhf-zh/_/static/javascript/readthedocs-addons.js"></script><meta name="readthedocs-project-slug" content="openrlhf" /><meta name="readthedocs-version-slug" content="latest" /><meta name="readthedocs-resolver-filename" content="/performance.html" /><meta name="readthedocs-http-status" content="200" /><link rel="stylesheet" href="chinese-font.css"><script defer src="offline.js"></script></head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            OpenRLHF
+          </a>
+              <div class="version">
+                0.10.2
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="搜索文档" aria-label="搜索文档" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="导航菜单">
+              <p class="caption" role="heading"><span class="caption-text">入门</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="quick_start.html">快速开始</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">核心概念</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="architecture.html">架构基础：Ray（分布式计算框架）+ vLLM（大模型推理引擎）分布式架构</a></li>
+<li class="toctree-l1"><a class="reference internal" href="agent_paradigm.html">设计范式：基于 Agent（智能体）的执行</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">训练指南</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="agent_training.html">RL（强化学习）训练指南</a></li>
+<li class="toctree-l1"><a class="reference internal" href="non_rl.html">监督与偏好训练（SFT（监督微调）/RM（奖励模型）/DPO（直接偏好优化））</a></li>
+<li class="toctree-l1"><a class="reference internal" href="common_options.html">常用 CLI（命令行接口）选项</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">扩展与运维</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="hybrid_engine.html">Hybrid Engine（混合引擎）</a></li>
+<li class="toctree-l1"><a class="reference internal" href="async_training.html">异步训练与 Partial Rollout（可中断并恢复的部分采样生成）</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">性能调优</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#choosing-a-deployment-mode">选择部署模式</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#speed-knobs">加速选项</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#memory-management">显存管理</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#batch-size-tuning">批次大小调优</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#long-context-8k-tokens">长上下文（&gt;8K token）</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="checkpoint.html">Checkpoint（检查点）保存与恢复</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sequence_parallelism.html">Sequence Parallelism（序列并行，RingAttention）</a></li>
+<li class="toctree-l1"><a class="reference internal" href="multi-node.html">多节点训练</a></li>
+<li class="toctree-l1"><a class="reference internal" href="nvidia_docker.html">NVIDIA（英伟达） Docker（GPU（图形处理器） 容器支持，可选）</a></li>
+<li class="toctree-l1"><a class="reference internal" href="troubleshooting.html">故障排查</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="移动端导航菜单" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">OpenRLHF</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">性能调优</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/performance.rst.txt" rel="nofollow"> 查看原文源码</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="performance-tuning">
+<h1>性能调优<a class="headerlink" href="#performance-tuning" title="Permalink to this heading"></a></h1>
+<p>本指南汇总对吞吐量及显存最重要的配置选项。Hybrid Engine（混合引擎）细节见 <a class="reference internal" href="hybrid_engine.html"><span class="doc">Hybrid Engine（混合引擎）</span></a>，错误排查见 <a class="reference internal" href="troubleshooting.html"><span class="doc">故障排查</span></a>。</p>
+<p><strong>经验原则</strong>：从已知可用的 recipe（训练方案）（见 <code class="docutils literal notranslate"><span class="pre">examples/scripts</span></code>）开始，每次只调整一个选项。</p>
+<section id="choosing-a-deployment-mode">
+<h2>选择部署模式<a class="headerlink" href="#choosing-a-deployment-mode" title="Permalink to this heading"></a></h2>
+<p>根据优化目标选择：</p>
+<ul class="simple">
+<li><p><strong>最高吞吐量 → 异步训练</strong>（<code class="docutils literal notranslate"><span class="pre">--train.async_enable</span></code>）。通过有界队列重叠 rollout（轨迹采样）与训练；用 <code class="docutils literal notranslate"><span class="pre">--train.async_queue_size</span></code> 调整异步程度（从 <code class="docutils literal notranslate"><span class="pre">1</span></code> 开始，仅当 rollout 成为训练瓶颈时增大）。添加 <code class="docutils literal notranslate"><span class="pre">--train.partial_rollout_enable</span></code>，重叠权重同步与生成。见 <a class="reference internal" href="async_training.html"><span class="doc">异步训练与 Partial Rollout（可中断并恢复的部分采样生成）</span></a>。</p></li>
+<li><p><strong>最高稳定性 → Hybrid Engine</strong>（<code class="docutils literal notranslate"><span class="pre">--train.colocate_all</span> <span class="pre">--vllm.enable_sleep</span>
+<span class="pre">--ds.enable_sleep</span></code>）。完全 on-policy（同策略），在共享 GPU（图形处理器）上切换角色，实现极佳 GPU 利用率。对收敛敏感工作负载而言，是稳妥的默认方案。见 <a class="reference internal" href="hybrid_engine.html"><span class="doc">Hybrid Engine（混合引擎）</span></a>。</p></li>
+<li><p><strong>分布式模式</strong>（vLLM（大模型推理引擎）/ Actor（策略模型）/ Critic（价值模型）使用独立 GPU 组）是无法同置的极大模型或混合硬件集群的备选方案。按各组自身显存和计算需求配置规模。</p></li>
+</ul>
+</section>
+<section id="speed-knobs">
+<h2>加速选项<a class="headerlink" href="#speed-knobs" title="Permalink to this heading"></a></h2>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 34%" />
+<col style="width: 41%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>选项</p></th>
+<th class="head"><p>标志</p></th>
+<th class="head"><p>使用时机/原因</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><strong>Sample packing（样本打包）</strong></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--ds.packing_samples</span></code></p></td>
+<td><p>始终开启：移除填充，大幅加速训练。</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>NCCL（GPU 集合通信库）权重同步</strong></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--vllm.sync_backend</span> <span class="pre">nccl</span></code></p></td>
+<td><p>多 GPU 时始终开启，比默认方式更快。</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>动态批次</strong></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--train.dynamic_batch_enable</span></code> + <code class="docutils literal notranslate"><span class="pre">--train.max_tokens_per_gpu</span></code> /
+<code class="docutils literal notranslate"><span class="pre">--rollout.max_tokens_per_gpu</span></code></p></td>
+<td><p>序列长度变化时，比固定 micro-batch（微批次）利用率更好。</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>异步训练</strong></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--train.async_enable</span></code></p></td>
+<td><p>最快方案。用 <code class="docutils literal notranslate"><span class="pre">--train.async_queue_size</span></code> 调节异步程度（从 <code class="docutils literal notranslate"><span class="pre">1</span></code> 开始）。先在同步模式验证收敛。</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Partial rollout（部分采样）</strong></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--train.partial_rollout_enable</span></code></p></td>
+<td><p>配合 <code class="docutils literal notranslate"><span class="pre">--train.async_enable</span></code>，重叠生成与权重同步。搭配 <code class="docutils literal notranslate"><span class="pre">--algo.advantage.is_correction_enable</span></code>。</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Hybrid Engine</strong></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--train.colocate_all</span></code> + <code class="docutils literal notranslate"><span class="pre">--vllm.enable_sleep</span></code> + <code class="docutils literal notranslate"><span class="pre">--ds.enable_sleep</span></code></p></td>
+<td><p>最稳定的高吞吐量方案。担心 off-policy（异策略）噪声时最佳。</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Overlap comm（通信重叠）</strong></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--ds.overlap_comm</span></code></p></td>
+<td><p>显存充足时，重叠反向传播和梯度归约。</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>DeepCompile（DeepSpeed（分布式训练优化框架） 图编译）</strong></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--ds.deepcompile</span></code></p></td>
+<td><p>PyTorch（深度学习框架）2.0+，DeepSpeed（分布式训练框架）图编译。</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Prefix caching（前缀缓存）</strong></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--vllm.enable_prefix_caching</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--rollout.n_samples_per_prompt</span> <span class="pre">&gt;</span> <span class="pre">1</span></code>：复用共享 prompt 的 KV（键值缓存）。</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="memory-management">
+<h2>显存管理<a class="headerlink" href="#memory-management" title="Permalink to this heading"></a></h2>
+<p>显存 <strong>充足</strong>时：</p>
+<ul class="simple">
+<li><p>禁用 <code class="docutils literal notranslate"><span class="pre">--ds.adam_offload</span></code>；启用 <code class="docutils literal notranslate"><span class="pre">--ds.overlap_comm</span></code>。</p></li>
+<li><p>使用 <code class="docutils literal notranslate"><span class="pre">--train.colocate_all</span></code>（Hybrid Engine），或至少 <code class="docutils literal notranslate"><span class="pre">--train.colocate_critic_reward</span></code> + <code class="docutils literal notranslate"><span class="pre">--train.colocate_actor_ref</span></code>。</p></li>
+</ul>
+<p>遇到 <strong>OOM（内存不足）</strong>时（按优先顺序）：</p>
+<ol class="arabic simple">
+<li><p>启用 <code class="docutils literal notranslate"><span class="pre">--ds.packing_samples</span></code> 和 <code class="docutils literal notranslate"><span class="pre">--actor.gradient_checkpointing_enable</span></code>。</p></li>
+<li><p>减小 <code class="docutils literal notranslate"><span class="pre">--train.micro_batch_size</span></code> / <code class="docutils literal notranslate"><span class="pre">--rollout.micro_batch_size</span></code>。</p></li>
+<li><p>降低 <code class="docutils literal notranslate"><span class="pre">--vllm.gpu_memory_utilization</span></code>（如 0.6 → 0.5 → 0.4）。</p></li>
+<li><p>启用 <code class="docutils literal notranslate"><span class="pre">--ds.adam_offload</span></code>；增大 <code class="docutils literal notranslate"><span class="pre">--ds.zero_stage</span></code>（2 → 3）。</p></li>
+<li><p>禁用同置（移除 <code class="docutils literal notranslate"><span class="pre">--train.colocate_*</span></code>），改用分布式模式。</p></li>
+</ol>
+<div class="admonition note">
+<p class="admonition-title">说明</p>
+<p><code class="docutils literal notranslate"><span class="pre">--ds.adam_offload</span></code> <strong>不兼容</strong> <code class="docutils literal notranslate"><span class="pre">--actor.optim</span> <span class="pre">muon</span></code> / <code class="docutils literal notranslate"><span class="pre">--critic.optim</span> <span class="pre">muon</span></code>，DeepSpeed 的 Muon（矩阵参数优化器）将优化器状态留在 GPU。若需 adam-offload 节省显存，请用 Adam（优化器）或禁用 Muon。</p>
+</div>
+</section>
+<section id="batch-size-tuning">
+<h2>批次大小调优<a class="headerlink" href="#batch-size-tuning" title="Permalink to this heading"></a></h2>
+<ul class="simple">
+<li><p><strong>生成</strong>：尽量增大 <code class="docutils literal notranslate"><span class="pre">--rollout.micro_batch_size</span></code>，减小 vLLM TP（张量并行）规模（优先更多引擎，而非更大 TP）。</p></li>
+<li><p><strong>训练</strong>：尽量增大 <code class="docutils literal notranslate"><span class="pre">--train.micro_batch_size</span></code>，同时启用 <code class="docutils literal notranslate"><span class="pre">--ds.packing_samples</span></code>。</p></li>
+<li><p><strong>批次关系</strong>：常见选择为 <code class="docutils literal notranslate"><span class="pre">train.batch_size</span> <span class="pre">=</span> <span class="pre">rollout.batch_size</span> <span class="pre">*</span> <span class="pre">rollout.n_samples_per_prompt</span></code>。</p></li>
+</ul>
+</section>
+<section id="long-context-8k-tokens">
+<h2>长上下文（&gt;8K token）<a class="headerlink" href="#long-context-8k-tokens" title="Permalink to this heading"></a></h2>
+<ul class="simple">
+<li><p>启用 RingAttention（环形注意力）（<code class="docutils literal notranslate"><span class="pre">--ds.ring_attn_size</span></code>），参见 <a class="reference internal" href="sequence_parallelism.html"><span class="doc">Sequence Parallelism（序列并行，RingAttention）</span></a>。</p></li>
+<li><p>保持 <code class="docutils literal notranslate"><span class="pre">--ds.packing_samples</span></code> 开启。</p></li>
+<li><p>增大 <code class="docutils literal notranslate"><span class="pre">--ds.zero_stage</span></code>（通常为 3），密切监控显存。</p></li>
+</ul>
+<p>启动 recipe（方案）见 <a class="reference internal" href="hybrid_engine.html"><span class="doc">Hybrid Engine（混合引擎）</span></a> 和 <a class="reference internal" href="agent_training.html"><span class="doc">RL（强化学习）训练指南</span></a>；错误排查见 <a class="reference internal" href="troubleshooting.html"><span class="doc">故障排查</span></a>。</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="async_training.html" class="btn btn-neutral float-left" title="Async Training &amp; Partial Rollout" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="checkpoint.html" class="btn btn-neutral float-right" title="Checkpointing" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, OpenRLHF.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

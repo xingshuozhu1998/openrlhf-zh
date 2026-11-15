@@ -1,0 +1,15 @@
+/* Add Chinese glyphs to the original font families; keep the theme's spacing and sizes. */
+@font-face {
+  font-family: 'Local CJK';
+  src: url('_static/fonts/NotoSansCJKsc-Regular.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+2E80-9FFF, U+F900-FAFF, U+FE10-FE6F, U+FF00-FFEF, U+20000-2FA1F;
+}
+body, input, button, select, textarea, .wy-side-nav-search input[type='text'] {
+  font-family: 'Local CJK', Lato, 'Helvetica Neue', Arial, sans-serif;
+}
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Local CJK', 'Roboto Slab', ff-tisa-web-pro, Georgia, Arial, sans-serif;
+}

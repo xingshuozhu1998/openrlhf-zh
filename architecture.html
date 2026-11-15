@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="zh-CN" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>架构基础：Ray（分布式计算框架）+ vLLM（大模型推理引擎）分布式架构 &mdash; OpenRLHF 0.10.2 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js?v=69c39844"></script>
+        <script src="_static/doctools.js?v=888ff710"></script>
+        <script src="_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Design Paradigm: Agent-Based Execution" href="agent_paradigm.html" />
+    <link rel="prev" title="Quick Start" href="quick_start.html" /> 
+<script async type="text/javascript" src="/openrlhf-zh/_/static/javascript/readthedocs-addons.js"></script><meta name="readthedocs-project-slug" content="openrlhf" /><meta name="readthedocs-version-slug" content="latest" /><meta name="readthedocs-resolver-filename" content="/architecture.html" /><meta name="readthedocs-http-status" content="200" /><link rel="stylesheet" href="chinese-font.css"><script defer src="offline.js"></script></head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            OpenRLHF
+          </a>
+              <div class="version">
+                0.10.2
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="搜索文档" aria-label="搜索文档" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="导航菜单">
+              <p class="caption" role="heading"><span class="caption-text">入门</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="quick_start.html">快速开始</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">核心概念</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">架构基础：Ray（分布式计算框架）+ vLLM（大模型推理引擎）分布式架构</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#why-this-matters">其重要性</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#core-infrastructure-components">核心基础设施组件</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#ray-distributed-scheduler-and-controller">Ray — 分布式调度器与控制器</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#vllm-high-performance-inference-engine">vLLM — 高性能推理引擎</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#deepspeed-memory-efficient-training">DeepSpeed — 内存高效训练</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#transformers-model-interface">Transformers（模型工具库）— 模型接口</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nccl-cuda-ipc-high-speed-communication">NCCL / CUDA IPC（CUDA 进程间通信）— 高速通信</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#execution-time-design-principles">执行时的设计原则</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#hybrid-engine-sleep-mode-time-sharing">Hybrid Engine（通过休眠模式分时共享）</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#async-partial-rollout-concurrent-pipeline">异步 + Partial Rollout（可中断并恢复的部分采样生成）（并发流水线）</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#key-benefits">主要收益</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="agent_paradigm.html">设计范式：基于 Agent（智能体）的执行</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">训练指南</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="agent_training.html">RL（强化学习）训练指南</a></li>
+<li class="toctree-l1"><a class="reference internal" href="non_rl.html">监督与偏好训练（SFT（监督微调）/RM（奖励模型）/DPO（直接偏好优化））</a></li>
+<li class="toctree-l1"><a class="reference internal" href="common_options.html">常用 CLI（命令行接口）选项</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">扩展与运维</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="hybrid_engine.html">Hybrid Engine（混合引擎）</a></li>
+<li class="toctree-l1"><a class="reference internal" href="async_training.html">异步训练与 Partial Rollout（可中断并恢复的部分采样生成）</a></li>
+<li class="toctree-l1"><a class="reference internal" href="performance.html">性能调优</a></li>
+<li class="toctree-l1"><a class="reference internal" href="checkpoint.html">Checkpoint（检查点）保存与恢复</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sequence_parallelism.html">Sequence Parallelism（序列并行，RingAttention）</a></li>
+<li class="toctree-l1"><a class="reference internal" href="multi-node.html">多节点训练</a></li>
+<li class="toctree-l1"><a class="reference internal" href="nvidia_docker.html">NVIDIA（英伟达） Docker（GPU（图形处理器） 容器支持，可选）</a></li>
+<li class="toctree-l1"><a class="reference internal" href="troubleshooting.html">故障排查</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="移动端导航菜单" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">OpenRLHF</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">架构基础：Ray（分布式计算框架）+ vLLM（大模型推理引擎）分布式架构</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/architecture.rst.txt" rel="nofollow"> 查看原文源码</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="architecture-foundation-ray-vllm-distribution">
+<h1>架构基础：Ray（分布式计算框架）+ vLLM（大模型推理引擎）分布式架构<a class="headerlink" href="#architecture-foundation-ray-vllm-distribution" title="Permalink to this heading"></a></h1>
+<p>OpenRLHF（开源强化学习训练框架）基于 <strong>Ray + vLLM 分布式架构</strong>，高效协调多个 GPU（图形处理器）上的组件。框架清晰分工：Ray 负责分布式调度，vLLM 负责高吞吐生成，DeepSpeed（分布式训练优化框架）负责内存高效的训练，均使用原生 HuggingFace（模型与工具平台）模型。</p>
+<a class="reference internal image-reference" href="_images/openrlhf-arch.png"><img alt="OpenRLHF Architecture (Ray + vLLM)" class="align-center" src="_images/openrlhf-arch.png" style="width: 700px;" /></a>
+<section id="why-this-matters">
+<h2>其重要性<a class="headerlink" href="#why-this-matters" title="Permalink to this heading"></a></h2>
+<p>RLHF（基于人类反馈的强化学习）训练约有<strong>80% 的实际耗时用于样本生成</strong>。朴素配置为生成和训练分配不同 GPU，使双方大部分时间闲置。OpenRLHF 通过两种方式避免此问题：</p>
+<ul class="simple">
+<li><p><strong>分布式模式</strong>：Actor（策略模型）/Reward（奖励模型）/Reference（参考模型）/Critic（价值模型）与 vLLM 引擎放在不同 GPU 上，以流水线方式运行。可扩展到<strong>70B+ 参数</strong>模型。</p></li>
+<li><p><strong>Hybrid Engine（混合引擎）模式</strong>（推荐用于多数工作负载）：所有模型与 vLLM 引擎同置于<strong>相同</strong> GPU，阶段之间通过休眠模式释放显存（见 <a class="reference internal" href="hybrid_engine.html"><span class="doc">Hybrid Engine（混合引擎）</span></a>）。</p></li>
+</ul>
+</section>
+<section id="core-infrastructure-components">
+<h2>核心基础设施组件<a class="headerlink" href="#core-infrastructure-components" title="Permalink to this heading"></a></h2>
+<section id="ray-distributed-scheduler-and-controller">
+<h3>Ray — 分布式调度器与控制器<a class="headerlink" href="#ray-distributed-scheduler-and-controller" title="Permalink to this heading"></a></h3>
+<p>OpenRLHF 使用 <a class="reference external" href="https://github.com/ray-project/ray">Ray</a> 进行分布式调度，将 Actor、Reward、Reference 和 Critic 模型分配到不同 GPU，或通过 Hybrid Engine 同置，从而支持高达<strong>70B+ 参数</strong>模型的可扩展训练。Ray placement groups（资源放置组）便于指定各模型的 GPU 资源，Ray jobs（作业提交机制）支持从集群任意节点提交训练任务。</p>
+</section>
+<section id="vllm-high-performance-inference-engine">
+<h3>vLLM — 高性能推理引擎<a class="headerlink" href="#vllm-high-performance-inference-engine" title="Permalink to this heading"></a></h3>
+<p><a class="reference external" href="https://github.com/vllm-project/vllm">vLLM</a> 通过 PagedAttention（分页注意力）、连续批处理、前缀缓存和 CUDA（NVIDIA 的并行计算平台） graphs（CUDA 计算图）提供高吞吐、内存高效的生成。OpenRLHF 将 vLLM 与 <strong>Auto Tensor Parallelism（自动张量并行，AutoTP）</strong> 和 <strong>Pipeline Parallelism（流水线并行，PP（流水线并行））</strong> 集成，使单次 rollout（策略采样生成）可分片到多个 GPU，无需修改训练循环。</p>
+<p>训练器与 vLLM 之间通过 NCCL（GPU 集合通信库）（<code class="docutils literal notranslate"><span class="pre">--vllm.sync_backend</span> <span class="pre">nccl</span></code>）同步权重，在每个训练步骤之后低延迟更新。</p>
+</section>
+<section id="deepspeed-memory-efficient-training">
+<h3>DeepSpeed — 内存高效训练<a class="headerlink" href="#deepspeed-memory-efficient-training" title="Permalink to this heading"></a></h3>
+<p>训练使用 <a class="reference external" href="https://github.com/deepspeedai/DeepSpeed">DeepSpeed</a> ZeRO-3（优化器状态、梯度与参数完全分片），在 GPU 间分片优化器状态、梯度和参数。可选功能：</p>
+<ul class="simple">
+<li><p><a class="reference external" href="https://github.com/deepspeedai/DeepSpeed/blob/master/blogs/deepcompile/README.md">deepcompile</a> — 图编译（<code class="docutils literal notranslate"><span class="pre">--ds.deepcompile</span></code>）。</p></li>
+<li><p><a class="reference external" href="https://github.com/deepspeedai/DeepSpeed/blob/master/blogs/huggingface-tp/README.md">AutoTP</a> — DeepSpeed 张量并行（<code class="docutils literal notranslate"><span class="pre">--ds.tensor_parallel_size</span></code>）。</p></li>
+<li><p><a class="reference external" href="https://arxiv.org/abs/2310.01889">RingAttention</a>（环形注意力）用于长上下文（<code class="docutils literal notranslate"><span class="pre">--ds.ring_attn_size</span></code>；见 <a class="reference internal" href="sequence_parallelism.html"><span class="doc">Sequence Parallelism（序列并行，RingAttention）</span></a>）。</p></li>
+<li><p>优化器可选择 Adam（自适应矩估计优化器，默认）或 Muon（矩阵权重优化器），通过 <code class="docutils literal notranslate"><span class="pre">--optim</span> <span class="pre">muon</span></code>（单模型训练器）/ <code class="docutils literal notranslate"><span class="pre">--actor.optim</span> <span class="pre">muon</span></code>（PPO（近端策略优化））设置。需要 DeepSpeed ≥ 0.18.2，且不兼容 <code class="docutils literal notranslate"><span class="pre">--ds.adam_offload</span></code>。</p></li>
+</ul>
+<p>因此，可直接从 HuggingFace 检查点训练大模型，无需模型转换或自定义训练框架。</p>
+</section>
+<section id="transformers-model-interface">
+<h3>Transformers（模型工具库）— 模型接口<a class="headerlink" href="#transformers-model-interface" title="Permalink to this heading"></a></h3>
+<p>原生集成 HuggingFace 的 <a class="reference external" href="https://github.com/huggingface/transformers">Transformers</a>，用于模型加载、状态管理和微调。通过 <code class="docutils literal notranslate"><span class="pre">vision_config</span></code> 字段自动识别 VLMs（Vision-Language Models，视觉语言模型），使用 <code class="docutils literal notranslate"><span class="pre">AutoModelForImageTextToText</span></code> 加载（见 <a class="reference internal" href="agent_training.html"><span class="doc">RL（强化学习）训练指南</span></a>）。</p>
+</section>
+<section id="nccl-cuda-ipc-high-speed-communication">
+<h3>NCCL / CUDA IPC（CUDA 进程间通信）— 高速通信<a class="headerlink" href="#nccl-cuda-ipc-high-speed-communication" title="Permalink to this heading"></a></h3>
+<p>GPU 间通信使用 NCCL 执行集合操作，使用 CUDA IPC 进行节点内权重传输。这使权重同步、梯度归约和 KV-cache（键值缓存）移动的成本在 70B 规模下仍然较低。</p>
+</section>
+</section>
+<section id="execution-time-design-principles">
+<h2>执行时的设计原则<a class="headerlink" href="#execution-time-design-principles" title="Permalink to this heading"></a></h2>
+<p>在上述静态组件布局之上，OpenRLHF 调度各组件<strong>何时</strong>运行，以最大化 GPU 利用率。内置两种互补机制，均为正式支持的功能，可按每次运行配置：</p>
+<section id="hybrid-engine-sleep-mode-time-sharing">
+<h3>Hybrid Engine（通过休眠模式分时共享）<a class="headerlink" href="#hybrid-engine-sleep-mode-time-sharing" title="Permalink to this heading"></a></h3>
+<p>不共享时，vLLM 在训练期间闲置，DeepSpeed 在生成期间闲置，浪费约一半 GPU 时间。Hybrid Engine 通过将 Actor/Critic/Reward/Reference <strong>以及</strong> vLLM 同置于相同 GPU，通过休眠模式分时运行来解决：</p>
+<ul class="simple">
+<li><p>在<strong>生成</strong>阶段，vLLM 活跃，DeepSpeed 引擎休眠。</p></li>
+<li><p>同步权重（NCCL）后，vLLM 休眠，DeepSpeed 唤醒进行<strong>训练</strong>。</p></li>
+<li><p>双方都能在阶段之间释放内存，因此即使模型较大，也可共用一组 GPU。</p></li>
+</ul>
+<p>启用标志：<code class="docutils literal notranslate"><span class="pre">--train.colocate_all</span> <span class="pre">--vllm.enable_sleep</span> <span class="pre">--ds.enable_sleep</span></code>。只要显存允许，推荐在任何集群上默认采用此配置。完整配置与调优说明见 <a class="reference internal" href="hybrid_engine.html"><span class="doc">Hybrid Engine（混合引擎）</span></a>。</p>
+</section>
+<section id="async-partial-rollout-concurrent-pipeline">
+<h3>异步 + Partial Rollout（可中断并恢复的部分采样生成）（并发流水线）<a class="headerlink" href="#async-partial-rollout-concurrent-pipeline" title="Permalink to this heading"></a></h3>
+<p>异步模式让 rollout 与训练<strong>并发</strong>运行，而非交替执行：</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">--train.async_enable</span></code> 通过有界队列（<code class="docutils literal notranslate"><span class="pre">--train.async_queue_size</span></code>）重叠两个阶段。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--train.partial_rollout_enable</span></code> 进一步减少停顿：vLLM 从不完全停止；权重同步时，它<strong>暂停</strong>在途请求，切换权重后<strong>恢复</strong>。以少量 off-policy（异策略）噪声为代价，使生成与权重广播重叠；在途样本会混用旧、新权重。</p></li>
+</ul>
+<p>异步流水线提供最高吞吐量，与 off-policy 修正（<code class="docutils literal notranslate"><span class="pre">--algo.advantage.is_correction_enable</span> <span class="pre">--algo.advantage.is_correction_type</span> <span class="pre">icepop</span></code>）自然适配。它们与 vLLM 休眠模式互斥，但仍可同置 DeepSpeed 模型。见 <a class="reference internal" href="async_training.html"><span class="doc">异步训练与 Partial Rollout（可中断并恢复的部分采样生成）</span></a>。</p>
+</section>
+</section>
+<section id="key-benefits">
+<h2>主要收益<a class="headerlink" href="#key-benefits" title="Permalink to this heading"></a></h2>
+<ul class="simple">
+<li><p><strong>可扩展性</strong> — 高效训练高达 70B+ 参数的模型。</p></li>
+<li><p><strong>效率</strong> — vLLM 加速生成，消除 RLHF 的主要瓶颈。</p></li>
+<li><p><strong>灵活性</strong> — Hybrid Engine 共享 GPU，避免小集群资源闲置；分布式模式扩展大模型；异步加 partial rollout 在吞吐量至关重要时最大化重叠。</p></li>
+<li><p><strong>兼容性</strong> — 原生集成 HuggingFace 模型，无需自定义检查点格式。</p></li>
+<li><p><strong>可用于生产环境</strong> — 基于 NCCL 的权重同步、完整检查点/恢复、最佳检查点跟踪、EMA（指数移动平均）、多节点 SLURM（集群作业调度系统）与全面日志。</p></li>
+</ul>
+<p>这些组件如何组成统一训练流水线，见 <a class="reference internal" href="agent_paradigm.html"><span class="doc">设计范式：基于 Agent（智能体）的执行</span></a>。</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="quick_start.html" class="btn btn-neutral float-left" title="Quick Start" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="agent_paradigm.html" class="btn btn-neutral float-right" title="Design Paradigm: Agent-Based Execution" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, OpenRLHF.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

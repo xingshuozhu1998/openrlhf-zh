@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="zh-CN" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>欢迎阅读 OpenRLHF（人类反馈强化学习框架） 文档！ &mdash; OpenRLHF 0.10.2 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js?v=69c39844"></script>
+        <script src="_static/doctools.js?v=888ff710"></script>
+        <script src="_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Quick Start" href="quick_start.html" /> 
+<script async type="text/javascript" src="/openrlhf-zh/_/static/javascript/readthedocs-addons.js"></script><meta name="readthedocs-project-slug" content="openrlhf" /><meta name="readthedocs-version-slug" content="latest" /><meta name="readthedocs-resolver-filename" content="/index.html" /><meta name="readthedocs-http-status" content="200" /><link rel="stylesheet" href="chinese-font.css"><script defer src="offline.js"></script></head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="#" class="icon icon-home">
+            OpenRLHF
+          </a>
+              <div class="version">
+                0.10.2
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="搜索文档" aria-label="搜索文档" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="导航菜单">
+              <p class="caption" role="heading"><span class="caption-text">入门</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="quick_start.html">快速开始</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">核心概念</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="architecture.html">架构基础：Ray（分布式计算框架）+ vLLM（大模型推理引擎）分布式架构</a></li>
+<li class="toctree-l1"><a class="reference internal" href="agent_paradigm.html">设计范式：基于 Agent（智能体）的执行</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">训练指南</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="agent_training.html">RL（强化学习）训练指南</a></li>
+<li class="toctree-l1"><a class="reference internal" href="non_rl.html">监督与偏好训练（SFT（监督微调）/RM（奖励模型）/DPO（直接偏好优化））</a></li>
+<li class="toctree-l1"><a class="reference internal" href="common_options.html">常用 CLI（命令行接口）选项</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">扩展与运维</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="hybrid_engine.html">Hybrid Engine（混合引擎）</a></li>
+<li class="toctree-l1"><a class="reference internal" href="async_training.html">异步训练与 Partial Rollout（可中断并恢复的部分采样生成）</a></li>
+<li class="toctree-l1"><a class="reference internal" href="performance.html">性能调优</a></li>
+<li class="toctree-l1"><a class="reference internal" href="checkpoint.html">Checkpoint（检查点）保存与恢复</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sequence_parallelism.html">Sequence Parallelism（序列并行，RingAttention）</a></li>
+<li class="toctree-l1"><a class="reference internal" href="multi-node.html">多节点训练</a></li>
+<li class="toctree-l1"><a class="reference internal" href="nvidia_docker.html">NVIDIA（英伟达） Docker（GPU（图形处理器） 容器支持，可选）</a></li>
+<li class="toctree-l1"><a class="reference internal" href="troubleshooting.html">故障排查</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="移动端导航菜单" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="#">OpenRLHF</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="#" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">欢迎阅读 OpenRLHF（人类反馈强化学习框架） 文档！</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/index.rst.txt" rel="nofollow"> 查看原文源码</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="welcome-to-openrlhf-s-documentation">
+<h1>欢迎阅读 OpenRLHF（人类反馈强化学习框架） 文档！<a class="headerlink" href="#welcome-to-openrlhf-s-documentation" title="Permalink to this heading"></a></h1>
+<p>OpenRLHF 是<strong>首个</strong>高性能、可用于生产的开源 RLHF（人类反馈强化学习）框架，结合 <strong>Ray（分布式执行框架）+ vLLM（大模型推理引擎）分布式架构</strong>与<strong>统一的 agent（智能体）设计范式</strong>，实现可扩展且便于扩充的人类反馈强化学习。</p>
+<a class="reference internal image-reference" href="_images/openrlhf-arch.png"><img alt="OpenRLHF Architecture" class="align-center" src="_images/openrlhf-arch.png" style="width: 700px;" /></a>
+<section id="highlights">
+<h2>主要特性<a class="headerlink" href="#highlights" title="Permalink to this heading"></a></h2>
+<ul class="simple">
+<li><p><strong>Ray + vLLM 分布式架构</strong> —— 可扩展至 70B+ 模型。vLLM 加速生成，消除主要 RLHF 瓶颈；DeepSpeed（分布式深度学习优化库）ZeRO-3（零冗余优化器第 3 阶段）直接从 HuggingFace（模型生态平台）checkpoint（检查点）训练，无需模型转换。</p></li>
+<li><p><strong>统一 agent 范式</strong> —— token-in-token-out（词元输入输出）流水线将<em>执行模式</em>（单轮 / 多轮）与<em>RL（强化学习）算法</em>解耦。通过同一个共享损失层，任意算法可与任意模式搭配。</p></li>
+<li><p><strong>最先进的 RL 算法</strong> —— PPO（近端策略优化）、REINFORCE++（策略梯度算法）、REINFORCE++-baseline（带基线的 REINFORCE++）、GRPO（组相对策略优化）、Dr. GRPO（去除 GRPO 偏差的方法）、RLOO（留一法策略梯度），单一选项即可切换。</p></li>
+<li><p><strong>Hybrid Engine（混合引擎）</strong> —— 将 Actor（策略模型）/Critic（价值评估模型）/Reward（奖励模型）/Reference（参考模型）/vLLM 共置在<strong>同一组</strong> GPU（图形处理器），通过休眠模式共享显存。小型集群利用率最高，部署最简单。</p></li>
+<li><p><strong>异步训练与 Partial Rollout（部分采样）</strong> —— 重叠 rollout（采样生成）与训练，并通过 vLLM 暂停/恢复，将权重同步与生成重叠。已验证收敛性时吞吐量最高。</p></li>
+<li><p><strong>单轮奖励与多轮 agent</strong> —— HTTP（网络协议）远程 RM（奖励模型）、自定义 Python 奖励函数（Reinforced Fine-Tuning（强化微调））、完整多轮环境，或将 vLLM 封装成 OpenAI 兼容聊天服务器。</p></li>
+<li><p><strong>Vision-Language Model（视觉语言模型）RLHF</strong> <em>（0.10）</em> —— 通过同一 agent 流水线，使用图像输入端到端训练 VLM（如 Qwen3.5）。</p></li>
+<li><p><strong>Muon（优化器）</strong> <em>（0.10.2 新增）</em> —— DeepSpeed 原生 <code class="docutils literal notranslate"><span class="pre">MuonWithAuxAdam</span></code>，用于 SFT（监督微调）/RM/DPO（直接偏好优化）/PPO。PPO 按实体选择（一行配置即可让 <code class="docutils literal notranslate"><span class="pre">--actor.optim</span> <span class="pre">muon</span></code> 配合 Adam（优化器）critic）。需要 DeepSpeed ≥ 0.18.2。</p></li>
+<li><p><strong>分层 CLI（命令行接口）</strong> <em>（0.10.2 新增）</em> —— 每个选项属于具名分组（<code class="docutils literal notranslate"><span class="pre">--ds.*</span></code>、<code class="docutils literal notranslate"><span class="pre">--vllm.*</span></code>、<code class="docutils literal notranslate"><span class="pre">--rollout.*</span></code>、<code class="docutils literal notranslate"><span class="pre">--data.*</span></code>、<code class="docutils literal notranslate"><span class="pre">--train.*</span></code>、<code class="docutils literal notranslate"><span class="pre">--eval.*</span></code>、<code class="docutils literal notranslate"><span class="pre">--ckpt.*</span></code>、<code class="docutils literal notranslate"><span class="pre">--logger.*</span></code>、<code class="docutils literal notranslate"><span class="pre">--algo.*</span></code>、<code class="docutils literal notranslate"><span class="pre">--actor.*</span></code>、<code class="docutils literal notranslate"><span class="pre">--critic.*</span></code>、<code class="docutils literal notranslate"><span class="pre">--ref.*</span></code>、<code class="docutils literal notranslate"><span class="pre">--reward.*</span></code>）。层级体现所属组件，通过 <code class="docutils literal notranslate"><span class="pre">--help</span></code> 自带说明。</p></li>
+<li><p><strong>Off-policy（异策略）校正</strong> —— TIS（截断重要性采样）/ICEPOP（重要性采样校正方法）/Seq-Mask-TIS（序列掩码截断重要性采样）处理 vLLM 与训练的对数概率不匹配。</p></li>
+<li><p><strong>生产环境必备功能</strong> —— 可恢复 checkpoint、最佳 checkpoint 跟踪、EMA（指数移动平均）、Wandb（实验跟踪平台）/TensorBoard（训练可视化工具）日志、SLURM（集群任务调度系统）多节点，以及用于 SFT/RM/DPO 的 LoRA（低秩适配）/QLoRA（量化低秩适配）。</p></li>
+</ul>
+</section>
+<section id="start-here">
+<h2>从这里开始<a class="headerlink" href="#start-here" title="Permalink to this heading"></a></h2>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 75%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><strong>新用户</strong></p></td>
+<td><p><a class="reference internal" href="quick_start.html"><span class="doc">快速开始</span></a> —— 安装与首次训练。</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>理解整体工作方式</strong></p></td>
+<td><p><a class="reference internal" href="architecture.html"><span class="doc">架构基础：Ray（分布式计算框架）+ vLLM（大模型推理引擎）分布式架构</span></a>（组件）与 <a class="reference internal" href="agent_paradigm.html"><span class="doc">设计范式：基于 Agent（智能体）的执行</span></a>（设计）。</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>选择实践方案</strong></p></td>
+<td><p><a class="reference internal" href="agent_training.html"><span class="doc">RL（强化学习）训练指南</span></a>（RL 训练）或 <a class="reference internal" href="non_rl.html"><span class="doc">监督与偏好训练（SFT（监督微调）/RM（奖励模型）/DPO（直接偏好优化））</span></a>（SFT / RM / DPO）。</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>查找选项</strong></p></td>
+<td><p><a class="reference internal" href="common_options.html"><span class="doc">常用 CLI（命令行接口）选项</span></a>（共享）或上述 trainer 专用页面。</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>从 0.9.x / 早期 0.10 升级</strong></p></td>
+<td><p><a class="reference internal" href="common_options.html#flag-migration"><span class="std std-ref">Flag migration (0.9.x / early 0.10 → 0.10.2)</span></a>，位于 <a class="reference internal" href="common_options.html"><span class="doc">常用 CLI（命令行接口）选项</span></a> 中。</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>扩展或调优</strong></p></td>
+<td><p><a class="reference internal" href="hybrid_engine.html"><span class="doc">Hybrid Engine（混合引擎）</span></a>, <a class="reference internal" href="async_training.html"><span class="doc">异步训练与 Partial Rollout（可中断并恢复的部分采样生成）</span></a>, <a class="reference internal" href="performance.html"><span class="doc">性能调优</span></a>, <a class="reference internal" href="multi-node.html"><span class="doc">多节点训练</span></a>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>出现故障</strong></p></td>
+<td><p><a class="reference internal" href="troubleshooting.html"><span class="doc">故障排查</span></a>.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="resources">
+<h2>资源<a class="headerlink" href="#resources" title="Permalink to this heading"></a></h2>
+<ul class="simple">
+<li><p><a class="reference external" href="https://github.com/OpenRLHF/OpenRLHF">GitHub Repository</a></p></li>
+<li><p><a class="reference external" href="https://www.researchgate.net/publication/393414548_OpenRLHF_An_Easy-to-use_Scalable_and_High-performance_RLHF_Framework">Technical Report</a></p></li>
+<li><p><a class="reference external" href="https://docs.google.com/presentation/d/1JRhB1d7csofx0PIZBmfyBdMluxNd5JLPpUHrrvVhGnk/edit?usp=sharing">Slides</a></p></li>
+<li><p><a class="reference external" href="https://blog.vllm.ai/2025/04/23/openrlhf-vllm.html">vLLM blog: Accelerating RLHF with vLLM</a></p></li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">说明</p>
+<p>本项目正在积极开发中。</p>
+</div>
+</section>
+<section id="contents">
+<h2>目录<a class="headerlink" href="#contents" title="Permalink to this heading"></a></h2>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">入门</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="quick_start.html">快速开始</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="quick_start.html#installation">安装</a></li>
+<li class="toctree-l2"><a class="reference internal" href="quick_start.html#a-note-on-the-cli">A note on the CLI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="quick_start.html#first-run-rlvr-with-qwen3-4b">First run (RLVR with Qwen3-4B)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="quick_start.html#prepare-datasets">Prepare datasets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="quick_start.html#pretrained-models">Pretrained models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="quick_start.html#typical-rlhf-workflow">Typical RLHF workflow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="quick_start.html#where-to-next">Where to next</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">核心概念</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="architecture.html">架构基础：Ray（分布式计算框架）+ vLLM（大模型推理引擎）分布式架构</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="architecture.html#why-this-matters">其重要性</a></li>
+<li class="toctree-l2"><a class="reference internal" href="architecture.html#core-infrastructure-components">核心基础设施组件</a></li>
+<li class="toctree-l2"><a class="reference internal" href="architecture.html#execution-time-design-principles">执行时的设计原则</a></li>
+<li class="toctree-l2"><a class="reference internal" href="architecture.html#key-benefits">主要收益</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="agent_paradigm.html">设计范式：基于 Agent（智能体）的执行</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="agent_paradigm.html#why-agent-based">Why agent-based?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="agent_paradigm.html#agent-architecture">Agent architecture</a></li>
+<li class="toctree-l2"><a class="reference internal" href="agent_paradigm.html#core-design-principles">Core design principles</a></li>
+<li class="toctree-l2"><a class="reference internal" href="agent_paradigm.html#execution-modes-orthogonal-to-algorithms">Execution modes (orthogonal to algorithms)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="agent_paradigm.html#pipelines-sync-vs-async">Pipelines (sync vs. async)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="agent_paradigm.html#worked-combinations">Worked combinations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="agent_paradigm.html#mental-model-in-one-sentence">Mental model in one sentence</a></li>
+<li class="toctree-l2"><a class="reference internal" href="agent_paradigm.html#how-to-use">How to use</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">训练指南</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="agent_training.html">RL（强化学习）训练指南</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="agent_training.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="agent_training.html#quick-launch-ray-vllm">Quick Launch (Ray + vLLM)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="agent_training.html#execution-modes">Execution Modes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="agent_training.html#rl-algorithms">RL Algorithms</a></li>
+<li class="toctree-l2"><a class="reference internal" href="agent_training.html#optimizer-adam-or-muon-per-entity">Optimizer: Adam or Muon (per entity)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="agent_training.html#tuning">Tuning</a></li>
+<li class="toctree-l2"><a class="reference internal" href="agent_training.html#vision-language-model-vlm-rlhf">Vision-Language Model (VLM) RLHF</a></li>
+<li class="toctree-l2"><a class="reference internal" href="agent_training.html#logging-evaluation">Logging &amp; evaluation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="agent_training.html#reference-scripts">Reference scripts</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="non_rl.html">监督与偏好训练（SFT（监督微调）/RM（奖励模型）/DPO（直接偏好优化））</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="non_rl.html#supervised-fine-tuning-sft">Supervised Fine-tuning (SFT)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="non_rl.html#reward-model-rm-training">Reward Model (RM) Training</a></li>
+<li class="toctree-l2"><a class="reference internal" href="non_rl.html#direct-preference-optimization-dpo">Direct Preference Optimization (DPO)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="non_rl.html#optimizer-adam-or-muon">Optimizer: Adam or Muon</a></li>
+<li class="toctree-l2"><a class="reference internal" href="non_rl.html#lora-qlora">LoRA / QLoRA</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="common_options.html">常用 CLI（命令行接口）选项</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="common_options.html#section-map">Section map</a></li>
+<li class="toctree-l2"><a class="reference internal" href="common_options.html#deepspeed">DeepSpeed</a></li>
+<li class="toctree-l2"><a class="reference internal" href="common_options.html#vllm">vLLM</a></li>
+<li class="toctree-l2"><a class="reference internal" href="common_options.html#rollout-generation">Rollout / generation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="common_options.html#data">Data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="common_options.html#training">Training</a></li>
+<li class="toctree-l2"><a class="reference internal" href="common_options.html#evaluation">Evaluation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="common_options.html#checkpointing">Checkpoint（检查点）保存与恢复</a></li>
+<li class="toctree-l2"><a class="reference internal" href="common_options.html#logging">Logging</a></li>
+<li class="toctree-l2"><a class="reference internal" href="common_options.html#model-entity-flags">Model / entity flags</a></li>
+<li class="toctree-l2"><a class="reference internal" href="common_options.html#optimizer-adam-or-muon">Optimizer: Adam or Muon</a></li>
+<li class="toctree-l2"><a class="reference internal" href="common_options.html#learning-rate-scheduler-gradient-clip">Learning-rate scheduler &amp; gradient clip</a></li>
+<li class="toctree-l2"><a class="reference internal" href="common_options.html#lora-qlora">LoRA / QLoRA</a></li>
+<li class="toctree-l2"><a class="reference internal" href="common_options.html#long-context-checkpointing-dedicated-pages">Long context &amp; checkpointing (dedicated pages)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="common_options.html#flag-migration-0-9-x-early-0-10-0-10-2">Flag migration (0.9.x / early 0.10 → 0.10.2)</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">扩展与运维</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="hybrid_engine.html">Hybrid Engine（混合引擎）</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="hybrid_engine.html#how-sleep-mode-works">How sleep mode works</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hybrid_engine.html#launch-recipe-qwen3-4b-rlvr-math">Launch recipe (Qwen3-4B RLVR — math)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hybrid_engine.html#key-flags">Key flags</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hybrid_engine.html#memory-rule-of-thumb">Memory rule of thumb</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hybrid_engine.html#relationship-to-async-training">Relationship to async training</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hybrid_engine.html#when-not-to-use-hybrid-engine">When <strong>not</strong> to use Hybrid Engine</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="async_training.html">异步训练与 Partial Rollout（可中断并恢复的部分采样生成）</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="async_training.html#how-it-works">How it works</a></li>
+<li class="toctree-l2"><a class="reference internal" href="async_training.html#flags">参数</a></li>
+<li class="toctree-l2"><a class="reference internal" href="async_training.html#launch-recipe-async-partial-rollout">Launch recipe (async + partial rollout)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="async_training.html#tuning-guide">Tuning guide</a></li>
+<li class="toctree-l2"><a class="reference internal" href="async_training.html#when-not-to-use-async">When <strong>not</strong> to use async</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="performance.html">性能调优</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="performance.html#choosing-a-deployment-mode">选择部署模式</a></li>
+<li class="toctree-l2"><a class="reference internal" href="performance.html#speed-knobs">加速选项</a></li>
+<li class="toctree-l2"><a class="reference internal" href="performance.html#memory-management">显存管理</a></li>
+<li class="toctree-l2"><a class="reference internal" href="performance.html#batch-size-tuning">批次大小调优</a></li>
+<li class="toctree-l2"><a class="reference internal" href="performance.html#long-context-8k-tokens">长上下文（&gt;8K token）</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="checkpoint.html">Checkpoint（检查点）保存与恢复</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="checkpoint.html#core-flags">Core flags</a></li>
+<li class="toctree-l2"><a class="reference internal" href="checkpoint.html#ppo-only-flags">PPO-only flags</a></li>
+<li class="toctree-l2"><a class="reference internal" href="checkpoint.html#deepspeed-universal-conversion">DeepSpeed → Universal conversion</a></li>
+<li class="toctree-l2"><a class="reference internal" href="checkpoint.html#example-sft">Example: SFT</a></li>
+<li class="toctree-l2"><a class="reference internal" href="checkpoint.html#example-rl-ray-vllm">Example: RL (Ray + vLLM)</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="sequence_parallelism.html">Sequence Parallelism（序列并行，RingAttention）</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="sequence_parallelism.html#when-to-use">使用时机</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sequence_parallelism.html#installation">安装</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sequence_parallelism.html#flags">参数</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sequence_parallelism.html#examples">示例</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="multi-node.html">多节点训练</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="multi-node.html#how-to-launch-ray-ppo-on-slurm">如何在 Slurm（集群任务调度系统）上启动 Ray（分布式执行框架）PPO（近端策略优化）？</a></li>
+<li class="toctree-l2"><a class="reference internal" href="multi-node.html#how-to-launch-sft-rm-dpo-training-on-slurm">如何在 Slurm 上启动 SFT（监督微调）/RM（奖励模型）/DPO（直接偏好优化）训练？</a></li>
+<li class="toctree-l2"><a class="reference internal" href="multi-node.html#how-to-specify-a-particular-node-for-a-model-in-ray-ppo">如何在 Ray PPO 中为模型指定特定节点？</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="nvidia_docker.html">NVIDIA（英伟达） Docker（GPU（图形处理器） 容器支持，可选）</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="nvidia_docker.html#one-click-installation-script-of-nvidia-docker">Nvidia-Docker 一键安装脚本</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="troubleshooting.html">故障排查</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="troubleshooting.html#argparse-unrecognized-arguments-after-upgrade">升级后出现 “argparse: unrecognized arguments”（无法识别参数）</a></li>
+<li class="toctree-l2"><a class="reference internal" href="troubleshooting.html#gpu-device-index-deepspeed-init-errors">GPU（图形处理器）设备索引 / DeepSpeed（分布式训练框架）初始化错误</a></li>
+<li class="toctree-l2"><a class="reference internal" href="troubleshooting.html#out-of-memory-oom">Out-of-memory（OOM，内存不足）</a></li>
+<li class="toctree-l2"><a class="reference internal" href="troubleshooting.html#muon-deepspeed-compatibility">Muon（矩阵参数优化器）与 DeepSpeed 兼容性</a></li>
+<li class="toctree-l2"><a class="reference internal" href="troubleshooting.html#vllm-hangs-nccl-issues">vLLM 挂起 / NCCL（GPU 集合通信库）问题</a></li>
+<li class="toctree-l2"><a class="reference internal" href="troubleshooting.html#ray-runtime-environment-problems">Ray 运行环境问题</a></li>
+<li class="toctree-l2"><a class="reference internal" href="troubleshooting.html#debug-with-py-spy-in-container">用 py-spy（Python 采样分析工具）调试（容器内）</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="quick_start.html" class="btn btn-neutral float-right" title="Quick Start" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, OpenRLHF.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

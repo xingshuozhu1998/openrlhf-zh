@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="zh-CN" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>设计范式：基于 Agent（智能体）的执行 &mdash; OpenRLHF 0.10.2 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js?v=69c39844"></script>
+        <script src="_static/doctools.js?v=888ff710"></script>
+        <script src="_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="RL Training Guide" href="agent_training.html" />
+    <link rel="prev" title="Architecture Foundation: Ray + vLLM Distribution" href="architecture.html" /> 
+<script async type="text/javascript" src="/openrlhf-zh/_/static/javascript/readthedocs-addons.js"></script><meta name="readthedocs-project-slug" content="openrlhf" /><meta name="readthedocs-version-slug" content="latest" /><meta name="readthedocs-resolver-filename" content="/agent_paradigm.html" /><meta name="readthedocs-http-status" content="200" /><link rel="stylesheet" href="chinese-font.css"><script defer src="offline.js"></script></head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            OpenRLHF
+          </a>
+              <div class="version">
+                0.10.2
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="搜索文档" aria-label="搜索文档" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="导航菜单">
+              <p class="caption" role="heading"><span class="caption-text">入门</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="quick_start.html">快速开始</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">核心概念</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="architecture.html">架构基础：Ray（分布式计算框架）+ vLLM（大模型推理引擎）分布式架构</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">设计范式：基于 Agent（智能体）的执行</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#why-agent-based">Why agent-based?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#agent-architecture">Agent architecture</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#core-design-principles">Core design principles</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#execution-modes-orthogonal-to-algorithms">Execution modes (orthogonal to algorithms)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#pipelines-sync-vs-async">Pipelines (sync vs. async)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#worked-combinations">Worked combinations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#mental-model-in-one-sentence">Mental model in one sentence</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#how-to-use">How to use</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">训练指南</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="agent_training.html">RL（强化学习）训练指南</a></li>
+<li class="toctree-l1"><a class="reference internal" href="non_rl.html">监督与偏好训练（SFT（监督微调）/RM（奖励模型）/DPO（直接偏好优化））</a></li>
+<li class="toctree-l1"><a class="reference internal" href="common_options.html">常用 CLI（命令行接口）选项</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">扩展与运维</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="hybrid_engine.html">Hybrid Engine（混合引擎）</a></li>
+<li class="toctree-l1"><a class="reference internal" href="async_training.html">异步训练与 Partial Rollout（可中断并恢复的部分采样生成）</a></li>
+<li class="toctree-l1"><a class="reference internal" href="performance.html">性能调优</a></li>
+<li class="toctree-l1"><a class="reference internal" href="checkpoint.html">Checkpoint（检查点）保存与恢复</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sequence_parallelism.html">Sequence Parallelism（序列并行，RingAttention）</a></li>
+<li class="toctree-l1"><a class="reference internal" href="multi-node.html">多节点训练</a></li>
+<li class="toctree-l1"><a class="reference internal" href="nvidia_docker.html">NVIDIA（英伟达） Docker（GPU（图形处理器） 容器支持，可选）</a></li>
+<li class="toctree-l1"><a class="reference internal" href="troubleshooting.html">故障排查</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="移动端导航菜单" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">OpenRLHF</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">设计范式：基于 Agent（智能体）的执行</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/agent_paradigm.rst.txt" rel="nofollow"> 查看原文源码</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="design-paradigm-agent-based-execution">
+<h1>设计范式：基于 Agent（智能体）的执行<a class="headerlink" href="#design-paradigm-agent-based-execution" title="Permalink to this heading"></a></h1>
+<p>OpenRLHF（开源强化学习训练框架）是首个通过统一的智能体流水线，<strong>将执行模式与 RL（强化学习）算法解耦</strong>的 RLHF（基于人类反馈的强化学习）框架。所有训练任务，无论标准 PPO（近端策略优化）、GRPO（组相对策略优化）推理、多轮工具使用、VLM（视觉语言模型）数学任务，还是异步 DAPO（解耦裁剪与动态采样策略优化），都通过<strong>同一个</strong> <code class="docutils literal notranslate"><span class="pre">AgentExecutorBase</span></code>（智能体执行器接口）运行，并产生<strong>相同</strong>类型的 token（文本词元）级轨迹。RL 损失层以相同方式处理它们。</p>
+<p>本页介绍设计理念、其实际意义，以及各组件如何配合。可运行实践方案见 <a class="reference internal" href="agent_training.html"><span class="doc">RL（强化学习）训练指南</span></a>；底层分布式基础设施见 <a class="reference internal" href="architecture.html"><span class="doc">架构基础：Ray（分布式计算框架）+ vLLM（大模型推理引擎）分布式架构</span></a>。</p>
+<nav class="contents local" id="contents">
+<ul class="simple">
+<li><p><a class="reference internal" href="#why-agent-based" id="id1">Why agent-based?</a></p></li>
+<li><p><a class="reference internal" href="#agent-architecture" id="id2">Agent architecture</a></p></li>
+<li><p><a class="reference internal" href="#core-design-principles" id="id3">Core design principles</a></p></li>
+<li><p><a class="reference internal" href="#execution-modes-orthogonal-to-algorithms" id="id4">Execution modes (orthogonal to algorithms)</a></p></li>
+<li><p><a class="reference internal" href="#pipelines-sync-vs-async" id="id5">Pipelines (sync vs. async)</a></p></li>
+<li><p><a class="reference internal" href="#worked-combinations" id="id6">Worked combinations</a></p></li>
+<li><p><a class="reference internal" href="#mental-model-in-one-sentence" id="id7">Mental model in one sentence</a></p></li>
+<li><p><a class="reference internal" href="#how-to-use" id="id8">How to use</a></p></li>
+</ul>
+</nav>
+<section id="why-agent-based">
+<h2><a class="toc-backref" href="#id1" role="doc-backlink">Why agent-based?</a><a class="headerlink" href="#why-agent-based" title="Permalink to this heading"></a></h2>
+<p>传统 RLHF 流水线将两类问题混在一起：<em>如何采集经验</em>（单轮生成、与环境多步交互、工具调用）与<em>如何更新策略</em>（PPO、GRPO、REINFORCE++（改进策略梯度方法）等）。二者耦合时，每种新执行模式都需要深入修改训练器，每种新算法也必须针对各模式重新实现。</p>
+<p>OpenRLHF 的智能体范式将二者分离：</p>
+<ul class="simple">
+<li><p><strong>Agent executors（智能体执行器）</strong>产生<strong>token 级轨迹</strong>，包含输入 token、输出 token、对数概率、可选的环境图像和逐步奖励。</p></li>
+<li><p><strong>RL 算法</strong>通过统一的共享损失计算层使用该轨迹。</p></li>
+</ul>
+<p>由于接口边界采用 <strong>token-in / token-out（词元输入/词元输出）</strong>，rollout（策略采样生成）与训练之间<strong>完全没有</strong>文本级重新分词或字符串拼接。这类操作是细微 RLHF 错误最常见的来源，例如对话模板漂移、BOS/EOS（序列起始/结束标记）不匹配，以及特殊 token 处理问题。</p>
+</section>
+<section id="agent-architecture">
+<h2><a class="toc-backref" href="#id2" role="doc-backlink">Agent architecture</a><a class="headerlink" href="#agent-architecture" title="Permalink to this heading"></a></h2>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>               ┌─────────────────────────────┐
+               │    AgentExecutorBase        │
+               │  (Token-in-Token-out Core)  │
+               └─────────────────────────────┘
+                            │
+               ┌────────────┴────────────┐
+               ↓                         ↓
+       SingleTurnExecutor        MultiTurnExecutor
+               │                         │
+    ┌──────────┴──────────┐   ┌─────────┴──────────┐
+    ↓                     ↓   ↓                    ↓
+Standard RLHF      Custom Reward   Multi-Step    External Env
+(One-shot gen)     Function (RFT)  Reasoning     (OpenAI Agent Server)
+    ↓                     ↓           ↓                ↓
+    └─────────────────────┴───────────┴────────────────┘
+                            │
+                  Consistent Token Trajectories
+                            │
+                  ┌─────────┴─────────┐
+                  │  RL Algorithms    │
+                  │  (Decoupled)      │
+                  │                   │
+                  │  PPO, REINFORCE++ │
+                  │  GRPO, RLOO, etc. │
+                  └───────────────────┘
+</pre></div>
+</div>
+<p>用一句话概括数据流：<strong>提示词 → 智能体执行器 → token 轨迹与奖励 → 优势计算 → 策略/critic（价值模型）更新</strong>。</p>
+</section>
+<section id="core-design-principles">
+<h2><a class="toc-backref" href="#id3" role="doc-backlink">Core design principles</a><a class="headerlink" href="#core-design-principles" title="Permalink to this heading"></a></h2>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 75%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>原则</p></th>
+<th class="head"><p>实际含义</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><strong>Token-in-Token-out</strong></p></td>
+<td><p>轨迹保存为 token ID 和对数概率，采样与训练之间从不重新解码为文本。消除文本级不匹配，完整保留 vLLM（大模型推理引擎）产生的结果。</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>统一接口</strong></p></td>
+<td><p>单轮与多轮共享同一个 <code class="docutils literal notranslate"><span class="pre">AgentExecutorBase</span></code> API（应用编程接口）。切换模式只需更改一个标志（<code class="docutils literal notranslate"><span class="pre">--train.agent_func_path</span></code>），训练器代码路径完全相同。</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>与算法无关</strong></p></td>
+<td><p>算法（PPO、REINFORCE++、GRPO、RLOO（留一法奖励基线方法）、Dr. GRPO（修正 GRPO 偏差的变体）、REINFORCE++-baseline（采用奖励基线的 REINFORCE++））通过 <code class="docutils literal notranslate"><span class="pre">--algo.advantage.estimator</span></code> 选择，使用相同轨迹格式。新增算法无需修改执行器。</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>与流水线无关</strong></p></td>
+<td><p>同步（Hybrid Engine（混合引擎））与异步（可选 partial rollout（可中断并恢复的部分采样生成））流水线都接入同一损失层。吞吐量与 on-policy（同策略）程度之间的取舍由部署决定，而非算法决定。</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>可扩展</strong></p></td>
+<td><p>自定义奖励（单轮 RFT（强化微调））通过 Python（编程语言）文件路径指定；自定义环境（多轮）是 <code class="docutils literal notranslate"><span class="pre">AgentInstanceBase</span></code> 的子类。无需修改训练器。</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>可用于生产环境</strong></p></td>
+<td><p>内置支持可恢复检查点、最佳检查点跟踪、EMA（指数移动平均）、多节点 SLURM（集群作业调度系统）、Wandb（实验跟踪工具）/TensorBoard（训练可视化工具）、off-policy（异策略）修正、长度惩罚和动态过滤，均作为同一流水线上的模块化标志提供。</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="execution-modes-orthogonal-to-algorithms">
+<h2><a class="toc-backref" href="#id4" role="doc-backlink">Execution modes (orthogonal to algorithms)</a><a class="headerlink" href="#execution-modes-orthogonal-to-algorithms" title="Permalink to this heading"></a></h2>
+<p>执行模式与 RL 算法是两个<strong>相互独立</strong>的维度，每种组合均有效。</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 22%" />
+<col style="width: 40%" />
+<col style="width: 23%" />
+<col style="width: 15%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>模式</p></th>
+<th class="head"><p>适用场景</p></th>
+<th class="head"><p>选择方式</p></th>
+<th class="head"><p>复杂度</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><strong>单轮</strong> <em>（默认）</em></p></td>
+<td><p>标准 RLHF、RLVR（基于可验证奖励的强化学习）、使用自定义奖励的强化微调（数学/代码/格式/多目标）</p></td>
+<td><p>默认；可选 <code class="docutils literal notranslate"><span class="pre">--reward.remote_url</span></code>（HTTP（超文本传输协议）RM（奖励模型）服务器或本地 Python 文件）</p></td>
+<td><p>⭐ — 覆盖约 99% 的场景</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>多轮</strong></p></td>
+<td><p>带环境反馈的多步推理、代码执行循环、游戏、工具使用及智能体训练</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--train.agent_func_path</span> <span class="pre">/path/to/agent.py</span></code></p></td>
+<td><p>⭐⭐ — 实现 <code class="docutils literal notranslate"><span class="pre">reset()</span></code> / <code class="docutils literal notranslate"><span class="pre">step()</span></code></p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="pipelines-sync-vs-async">
+<h2><a class="toc-backref" href="#id5" role="doc-backlink">Pipelines (sync vs. async)</a><a class="headerlink" href="#pipelines-sync-vs-async" title="Permalink to this heading"></a></h2>
+<p>第三个独立维度，根据吞吐量与收敛之间的取舍选择。</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 40%" />
+<col style="width: 35%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>流水线</p></th>
+<th class="head"><p>行为</p></th>
+<th class="head"><p>适用时机</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><strong>同步（Hybrid Engine）</strong></p></td>
+<td><p>Rollout → 训练 → rollout（每次执行一个阶段，模型通过休眠模式共享 GPU（图形处理器））</p></td>
+<td><p>默认选择，收敛最稳定；GPU 同置时吞吐量最佳。见 <a class="reference internal" href="hybrid_engine.html"><span class="doc">Hybrid Engine（混合引擎）</span></a>。</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>异步</strong></p></td>
+<td><p>rollout 与训练通过有界队列（<code class="docutils literal notranslate"><span class="pre">--train.async_queue_size</span></code>）并发运行，样本略带 off-policy 性质</p></td>
+<td><p>适用于吞吐量至关重要且已验证收敛的场景。<code class="docutils literal notranslate"><span class="pre">--train.async_enable</span></code>。</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>异步 + Partial Rollout</strong></p></td>
+<td><p>生成持续进行；vLLM 在请求尚未完成时通过暂停/恢复切换权重</p></td>
+<td><p>最大程度重叠；在途样本可能同时包含旧权重与新权重生成的 token。<code class="docutils literal notranslate"><span class="pre">--train.async_enable</span> <span class="pre">--train.partial_rollout_enable</span></code>。见 <a class="reference internal" href="async_training.html"><span class="doc">异步训练与 Partial Rollout（可中断并恢复的部分采样生成）</span></a>。</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="worked-combinations">
+<h2><a class="toc-backref" href="#id6" role="doc-backlink">Worked combinations</a><a class="headerlink" href="#worked-combinations" title="Permalink to this heading"></a></h2>
+<p>以下是上游参考脚本中的几种组合：</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 35%" />
+<col style="width: 35%" />
+<col style="width: 30%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>算法 × 模式 × 流水线</p></th>
+<th class="head"><p>使用示例</p></th>
+<th class="head"><p>参考脚本</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><strong>PPO + 单轮 + 同步</strong></p></td>
+<td><p>使用已训练奖励模型的经典 RLHF</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">train_ppo_ray_hybrid_engine.sh</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>REINFORCE++-baseline + 单轮 + 同步</strong></p></td>
+<td><p>使用规则奖励的 RLVR/推理</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">train_prorlv2_math_hybrid_engine.sh</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><strong>REINFORCE++-baseline + 多轮 + 异步 + Partial Rollout</strong></p></td>
+<td><p>带环境反馈的异步智能体 RLHF</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">train_reinforce_baseline_ray_agent_async.sh</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>REINFORCE++-baseline + VLM 单轮 + 同步</strong></p></td>
+<td><p>视觉语言数学推理</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">train_vlm_math_hybrid_engine.sh</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><strong>PPO + 多轮（OpenAI（人工智能服务平台）服务器）+ 同步</strong></p></td>
+<td><p>通过兼容 OpenAI 的聊天 API 进行工具使用训练</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">agent_func_openai_server_executor.py</span></code></p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="mental-model-in-one-sentence">
+<h2><a class="toc-backref" href="#id7" role="doc-backlink">Mental model in one sentence</a><a class="headerlink" href="#mental-model-in-one-sentence" title="Permalink to this heading"></a></h2>
+<p><strong>分别选择算法、执行模式和流水线这三项独立配置，OpenRLHF 就会端到端运行同一个训练循环。</strong></p>
+</section>
+<section id="how-to-use">
+<h2><a class="toc-backref" href="#id8" role="doc-backlink">How to use</a><a class="headerlink" href="#how-to-use" title="Permalink to this heading"></a></h2>
+<p><strong>选择执行模式</strong></p>
+<ul class="simple">
+<li><p>单轮（默认）：无需额外标志；自定义奖励可使用 <code class="docutils literal notranslate"><span class="pre">--reward.remote_url</span> <span class="pre">&lt;http-url-or-py-file&gt;</span></code>。</p></li>
+<li><p>多轮：<code class="docutils literal notranslate"><span class="pre">--train.agent_func_path</span> <span class="pre">/path/to/agent_func.py</span></code>。</p></li>
+</ul>
+<p><strong>选择 RL 算法</strong> — 将 <code class="docutils literal notranslate"><span class="pre">--algo.advantage.estimator</span></code> 设为以下之一：</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">gae</span></code> — PPO（默认；使用 critic）。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">reinforce</span></code> — REINFORCE++。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">reinforce_baseline</span></code> — REINFORCE++-baseline（推荐用于 RLVR/推理）。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">rloo</span></code> — RLOO。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">group_norm</span></code> — GRPO。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">dr_grpo</span></code> — Dr. GRPO。</p></li>
+</ul>
+<p><strong>选择流水线</strong></p>
+<ul class="simple">
+<li><p>同步 + Hybrid Engine（默认）：<code class="docutils literal notranslate"><span class="pre">--train.colocate_all</span> <span class="pre">--vllm.enable_sleep</span> <span class="pre">--ds.enable_sleep</span></code>。</p></li>
+<li><p>异步：<code class="docutils literal notranslate"><span class="pre">--train.async_enable</span></code>（可选 <code class="docutils literal notranslate"><span class="pre">--train.async_queue_size</span> <span class="pre">N</span></code>）。</p></li>
+<li><p>异步 + partial rollout：<code class="docutils literal notranslate"><span class="pre">--train.async_enable</span> <span class="pre">--train.partial_rollout_enable</span></code>。</p></li>
+</ul>
+<p>覆盖每种组合的可运行实践方案见 <a class="reference internal" href="agent_training.html"><span class="doc">RL（强化学习）训练指南</span></a>。</p>
+<div class="admonition warning">
+<p class="admonition-title">警告</p>
+<p>实现自定义多轮智能体时，请始终遵循 <strong>token-in-token-out 原则</strong>，操作 <code class="docutils literal notranslate"><span class="pre">states[&quot;action_text&quot;]</span></code> 等接口返回的 token ID，而不是手动拼接的文本字符串，否则可能在采样与训练之间引入难以察觉的文本级不匹配。</p>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="architecture.html" class="btn btn-neutral float-left" title="Architecture Foundation: Ray + vLLM Distribution" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="agent_training.html" class="btn btn-neutral float-right" title="RL Training Guide" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, OpenRLHF.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
